@@ -24,9 +24,18 @@ async fn main() {
     };
 
     grid.fill(attributes, 100, FillStyle::WhiteNoise);
+    grid.debug();
+
+    let mut i = 0;
 
     loop {
         //clear_background(BLACK);
+
+        if i == 500 {
+            grid.debug();
+        }
+
+        i = i + 1;
 
         grid.draw();
 

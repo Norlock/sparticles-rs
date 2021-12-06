@@ -4,6 +4,7 @@ mod grid;
 mod mesh;
 mod particle;
 mod position;
+mod transform;
 
 use crate::grid::Grid;
 use fill_style::FillStyle;
@@ -23,7 +24,6 @@ async fn main() {
     };
 
     grid.fill(attributes, 100, FillStyle::WhiteNoise);
-    draw_grid(50, grid.possibility_side_length as f32, GREEN, GREEN);
 
     loop {
         //clear_background(BLACK);

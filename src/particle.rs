@@ -1,6 +1,9 @@
 use macroquad::prelude::draw_circle;
 use macroquad::prelude::Color;
 
+use crate::transform;
+use crate::transform::Transform;
+
 #[derive(Debug)]
 pub struct Particle {
     pub x: f32,
@@ -13,8 +16,6 @@ pub struct Particle {
     pub vx_energy: u16,
     pub vy_energy: u16,
     pub frame: u16,
-    pub cell_x_index: u16,
-    pub cell_y_index: u16,
 }
 
 pub struct ParticleAttributes {
@@ -25,13 +26,7 @@ pub struct ParticleAttributes {
 
 // TODO add factory that returns mesh based on particle
 impl Particle {
-    pub fn new(
-        x: f32,
-        y: f32,
-        cell_x_index: u16,
-        cell_y_index: u16,
-        attributes: &ParticleAttributes,
-    ) -> Self {
+    pub fn new(x: f32, y: f32, attributes: &ParticleAttributes) -> Self {
         Self {
             x,
             y,
@@ -43,12 +38,17 @@ impl Particle {
             frame: 0,
             vx_energy: 0,
             vy_energy: 0,
-            cell_x_index,
-            cell_y_index,
         }
     }
 
     pub fn draw(&self) {
         draw_circle(self.x, self.y, self.diameter, self.color);
+    }
+
+    pub fn transform(&mut self, transform: Transform) {
+        self.vx = transform.vx;
+        self.vy = transform.vy;
+        self.x = self.x + self.vx;
+        self.y = self.y + self.vy;
     }
 }

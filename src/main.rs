@@ -14,7 +14,7 @@ use position::Position;
 
 #[macroquad::main("BasicShapes")]
 async fn main() {
-    let position = Position { x: 50, y: 50 };
+    let position = Position { x: 50., y: 50. };
     let mut grid = Grid::new(5, 5, 10, 10, 10, position, true);
 
     let attributes = ParticleAttributes {
@@ -23,20 +23,13 @@ async fn main() {
         diameter: 2.5,
     };
 
-    grid.fill(attributes, 100, FillStyle::WhiteNoise);
-    grid.debug();
-
-    let mut i = 0;
+    grid.fill(&attributes, 100, FillStyle::WhiteNoise);
+    grid.fill(&attributes, 200, FillStyle::WhiteNoise);
 
     loop {
         //clear_background(BLACK);
 
-        if i == 500 {
-            grid.debug();
-        }
-
-        i = i + 1;
-
+        grid.draw_ui();
         grid.draw();
 
         next_frame().await

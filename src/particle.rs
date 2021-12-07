@@ -1,11 +1,12 @@
 use macroquad::prelude::draw_circle;
 use macroquad::prelude::Color;
 
-use crate::transform;
+use crate::position::Position;
 use crate::transform::Transform;
 
 #[derive(Debug)]
 pub struct Particle {
+    pub inqueue: bool,
     pub x: f32,
     pub y: f32,
     pub vx: f32,
@@ -30,7 +31,7 @@ impl Particle {
         Self {
             x,
             y,
-            vx: 1.,
+            vx: 0.1,
             vy: 0.,
             decay: attributes.decay,
             color: attributes.color.clone(),
@@ -38,11 +39,17 @@ impl Particle {
             frame: 0,
             vx_energy: 0,
             vy_energy: 0,
+            inqueue: false,
         }
     }
 
-    pub fn draw(&self) {
-        draw_circle(self.x, self.y, self.diameter, self.color);
+    pub fn draw(&self, grid_position: &Position) {
+        draw_circle(
+            self.x + grid_position.x,
+            self.y + grid_position.y,
+            self.diameter,
+            self.color,
+        );
     }
 
     pub fn transform(&mut self, transform: Transform) {

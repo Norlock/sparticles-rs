@@ -1,4 +1,8 @@
-use std::borrow::{Borrow, BorrowMut};
+use std::time::Instant;
+use std::{
+    borrow::{Borrow, BorrowMut},
+    time::Duration,
+};
 
 use crate::{
     fill_style::FillStyle,
@@ -18,10 +22,13 @@ pub struct Grid {
     pub possibility_side_length: usize,
     pub position: Position,
     pub show_ui: bool,
-    width: u32,
-    height: u32,
+    pub frame: u32,
+    width: f32,
+    height: f32,
     cell_width: usize,
     cell_height: usize,
+    duration: Duration,
+    particle_count: u32,
 }
 
 fn create_possibility_grid(
@@ -51,8 +58,8 @@ impl Grid {
     ) -> Self {
         let cell_width = possibility_x_count * possibility_side_length;
         let cell_height = possibility_y_count * possibility_side_length;
-        let width = (cell_x_count * cell_width) as u32;
-        let height = (cell_y_count * cell_height) as u32;
+        let width = (cell_x_count * cell_width) as f32;
+        let height = (cell_y_count * cell_height) as f32;
         let possibility_spots = create_possibility_grid(possibility_x_count, possibility_y_count);
 
         Self {
@@ -68,6 +75,9 @@ impl Grid {
             possibility_spots,
             cell_width,
             cell_height,
+            frame: 0,
+            duration: Duration::new(0, 0),
+            particle_count: 0,
         }
     }
 
@@ -103,13 +113,20 @@ impl Grid {
 
     pub fn handle_particle(&mut self, v_index: usize, p_index: usize) -> bool {
         let particle = self.possibility_spots[v_index][p_index].borrow();
+
+        if particle.inqueue {
+            let m_particle = self.possibility_spots[v_index][p_index].borrow_mut();
+            m_particle.inqueue = false;
+            return false;
+        }
+
         let mut transform = Transform::new(particle);
 
         let new_x = particle.x + particle.vx;
         let new_y = particle.y + particle.vy;
 
-        let x_out_of_bounds = self.width <= new_x as u32;
-        let y_out_of_bounds = self.height <= new_y as u32;
+        let x_out_of_bounds = new_x < 0. || self.width <= new_x;
+        let y_out_of_bounds = new_y < 0. || self.height <= new_y;
 
         if x_out_of_bounds {
             transform.vx = 0.;
@@ -125,32 +142,36 @@ impl Grid {
         let new_x_spot = self.possibility_x_index(particle.x + transform.vx);
         let new_y_spot = self.possibility_y_index(particle.y + transform.vy);
 
-        fn particle_actions(particle: &mut Particle, transform: Transform) {
+        fn particle_actions(position: &Position, particle: &mut Particle, transform: Transform) {
             particle.transform(transform);
-            particle.draw();
+            particle.draw(&position);
         }
 
         if current_x_spot != new_x_spot || current_y_spot != new_y_spot {
             let mut m_particle = self.possibility_spots[v_index].remove(p_index);
-            particle_actions(&mut m_particle, transform);
+            m_particle.inqueue = true;
+            particle_actions(&self.position, &mut m_particle, transform);
             self.possibility_spots[new_y_spot * self.possibility_x_count + new_x_spot]
                 .push(m_particle);
             return true;
         } else {
             let m_particle = self.possibility_spots[v_index][p_index].borrow_mut();
-            particle_actions(m_particle, transform);
+            particle_actions(&self.position, m_particle, transform);
             return false;
         }
     }
 
-    pub fn fill(&mut self, attributes: ParticleAttributes, count: u32, fill_style: FillStyle) {
+    pub fn fill(&mut self, attributes: &ParticleAttributes, count: u32, fill_style: FillStyle) {
+        self.particle_count = self.particle_count + count;
+
         match fill_style {
-            FillStyle::BlueNoise => self.fill_blue_noise(&attributes, count),
+            FillStyle::BlueNoise => self.fill_blue_noise(attributes, count),
             FillStyle::WhiteNoise => self.fill_white_noise(attributes, count),
         }
     }
 
     pub fn draw(&mut self) {
+        let start = Instant::now();
         let vec_len = self.possibility_spots.len();
 
         let mut vec_index = 0;
@@ -170,11 +191,28 @@ impl Grid {
             vec_index = vec_index + 1;
         }
 
+        self.frame = self.frame + 1;
+
+        if self.frame % 50 == 0 {
+            self.duration = start.elapsed();
+            //self.debug();
+        }
         //draw_rectangle_lines(5., 5., 10., 10., 2., GREEN);
+    }
+
+    pub fn draw_ui(&self) {
         draw_text(
-            format!("particle count: {}", 100).as_str(),
+            format!("particle count: {}", self.particle_count).as_str(),
             10.0,
             20.0,
+            20.0,
+            WHITE,
+        );
+
+        draw_text(
+            format!("Loop time: {:?}", self.duration).as_str(),
+            10.0,
+            40.0,
             20.0,
             WHITE,
         );
@@ -187,7 +225,7 @@ impl Grid {
         let poss_x_index = self.possibility_x_index(x_coord);
         let poss_y_index = self.possibility_y_index(y_coord);
 
-        self.possibility_spots[poss_x_index * poss_y_index]
+        self.possibility_spots[poss_y_index * self.possibility_x_count + poss_x_index]
             .iter()
             .any(|p| {
                 self.cell_x_index(p.x) == cell_x_index && self.cell_y_index(p.y) == cell_y_index
@@ -196,13 +234,13 @@ impl Grid {
 
     fn fill_blue_noise(&mut self, attributes: &ParticleAttributes, count: u32) {}
 
-    fn fill_white_noise(&mut self, attributes: ParticleAttributes, count: u32) {
+    fn fill_white_noise(&mut self, attributes: &ParticleAttributes, count: u32) {
         //fn fill_cell(x_coord: u16, y_coord: u16) {}
 
         let mut i = 0;
         while i < count {
-            let x_coord = rand::gen_range(0, self.width);
-            let y_coord = rand::gen_range(0, self.height);
+            let x_coord = rand::gen_range(0., self.width);
+            let y_coord = rand::gen_range(0., self.height);
             if !self.possibility_taken(x_coord as f32, y_coord as f32) {
                 self.add_particle(x_coord as f32, y_coord as f32, &attributes);
                 i = i + 1;

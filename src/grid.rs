@@ -4,6 +4,7 @@ use std::{
     time::Duration,
 };
 
+use crate::particle;
 use crate::{
     fill_style::FillStyle,
     particle::{Particle, ParticleAttributes},
@@ -23,12 +24,12 @@ pub struct Grid {
     pub position: Position,
     pub show_ui: bool,
     pub frame: u32,
-    width: f32,
-    height: f32,
-    cell_width: usize,
-    cell_height: usize,
-    duration: Duration,
-    particle_count: u32,
+    pub width: f32,
+    pub height: f32,
+    pub cell_width: usize,
+    pub cell_height: usize,
+    pub duration: Duration,
+    pub particle_count: u32,
 }
 
 fn create_possibility_grid(
@@ -44,6 +45,12 @@ fn create_possibility_grid(
     }
 
     return spots;
+}
+
+fn particle_actions(position: &Position, particle: &mut Particle, transform: Transform) {
+    //particle.handle_collision(self);
+    particle.transform(transform);
+    particle.draw(&position);
 }
 
 impl Grid {
@@ -111,52 +118,42 @@ impl Grid {
         y_residual / self.possibility_side_length
     }
 
-    pub fn handle_particle(&mut self, v_index: usize, p_index: usize) -> bool {
-        let particle = self.possibility_spots[v_index][p_index].borrow();
-
-        if particle.inqueue {
-            let m_particle = self.possibility_spots[v_index][p_index].borrow_mut();
-            m_particle.inqueue = false;
+    pub fn handle_particle(&mut self, vec_index: usize, spot_index: usize) -> bool {
+        let particle = self.possibility_spots[vec_index][spot_index].borrow();
+        if particle.queue_frame == self.frame {
             return false;
         }
 
-        let mut transform = Transform::new(particle);
+        let mut transform = Transform::new(&particle);
 
-        let new_x = particle.x + particle.vx;
-        let new_y = particle.y + particle.vy;
+        let new_x = particle.x + transform.vx;
+        let new_y = particle.y + transform.vy;
 
         let x_out_of_bounds = new_x < 0. || self.width <= new_x;
         let y_out_of_bounds = new_y < 0. || self.height <= new_y;
 
         if x_out_of_bounds {
-            transform.vx = 0.;
+            transform.vx = transform.vx * -1.;
         }
 
         if y_out_of_bounds {
-            transform.vy = 0.;
+            transform.vy = transform.vy * -1.;
         }
-
-        let current_x_spot = self.possibility_x_index(particle.x);
-        let current_y_spot = self.possibility_y_index(particle.y);
 
         let new_x_spot = self.possibility_x_index(particle.x + transform.vx);
         let new_y_spot = self.possibility_y_index(particle.y + transform.vy);
+        let new_vec_index = new_y_spot * self.possibility_x_count + new_x_spot;
 
-        fn particle_actions(position: &Position, particle: &mut Particle, transform: Transform) {
-            particle.transform(transform);
-            particle.draw(&position);
-        }
-
-        if current_x_spot != new_x_spot || current_y_spot != new_y_spot {
-            let mut m_particle = self.possibility_spots[v_index].remove(p_index);
-            m_particle.inqueue = true;
+        if vec_index != new_vec_index {
+            let mut m_particle = self.possibility_spots[vec_index].remove(spot_index);
+            m_particle.queue_frame = self.frame;
             particle_actions(&self.position, &mut m_particle, transform);
             self.possibility_spots[new_y_spot * self.possibility_x_count + new_x_spot]
                 .push(m_particle);
             return true;
         } else {
-            let m_particle = self.possibility_spots[v_index][p_index].borrow_mut();
-            particle_actions(&self.position, m_particle, transform);
+            let mut m_particle = self.possibility_spots[vec_index][spot_index].borrow_mut();
+            particle_actions(&self.position, &mut m_particle, transform);
             return false;
         }
     }
@@ -172,32 +169,26 @@ impl Grid {
 
     pub fn draw(&mut self) {
         let start = Instant::now();
-        let vec_len = self.possibility_spots.len();
 
-        let mut vec_index = 0;
-
-        while vec_index < vec_len {
+        for vec_index in 0..self.possibility_spots.len() {
             let mut spot_len = self.possibility_spots[vec_index].len();
             let mut spot_index = 0;
 
             while spot_index < spot_len {
                 if self.handle_particle(vec_index, spot_index) {
                     spot_len = spot_len - 1;
-                    continue;
+                } else {
+                    spot_index = spot_index + 1;
                 }
-                spot_index = spot_index + 1;
             }
-
-            vec_index = vec_index + 1;
         }
-
-        self.frame = self.frame + 1;
 
         if self.frame % 50 == 0 {
             self.duration = start.elapsed();
             //self.debug();
         }
-        //draw_rectangle_lines(5., 5., 10., 10., 2., GREEN);
+
+        self.frame = self.frame + 1;
     }
 
     pub fn draw_ui(&self) {
@@ -216,6 +207,7 @@ impl Grid {
             20.0,
             WHITE,
         );
+        //draw_rectangle_lines(5., 5., 10., 10., 2., GREEN);
     }
 
     fn possibility_taken(&self, x_coord: f32, y_coord: f32) -> bool {

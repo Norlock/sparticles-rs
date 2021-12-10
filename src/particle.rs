@@ -1,8 +1,8 @@
-use crate::Grid;
 use macroquad::miniquad::gl::UINT32_MAX;
 use macroquad::prelude::draw_circle;
 use macroquad::prelude::Color;
 
+use crate::position;
 use crate::position::Position;
 use crate::transform::Transform;
 
@@ -14,6 +14,7 @@ pub struct Particle {
     pub vx: f32,
     pub vy: f32,
     pub radius: f32,
+    pub diameter: f32,
     pub color: Color,
     pub decay: f32,
     pub vx_energy: u16,
@@ -37,7 +38,8 @@ impl Particle {
             vy: 1.,
             decay: attributes.decay,
             color: attributes.color.clone(),
-            radius: attributes.diameter,
+            radius: attributes.diameter / 2.,
+            diameter: attributes.diameter,
             frame: 0,
             vx_energy: 0,
             vy_energy: 0,
@@ -45,7 +47,24 @@ impl Particle {
         }
     }
 
-    pub fn draw(&self, grid_position: &Position) {
+    pub fn handle_collision(&self, other: &Particle, transform: &mut Transform) {
+        let inside_x =
+            other.x <= transform.new_x() && transform.new_x() <= other.x + other.diameter;
+        let inside_y =
+            other.y <= transform.new_y() && transform.new_y() <= other.y + other.diameter;
+
+        if inside_x && inside_y {
+            transform.set_new_vx(transform.vx() * -1.);
+            transform.set_new_vy(transform.vy() * -1.);
+        }
+    }
+
+    pub fn update(&mut self, grid_position: &Position, transform: Transform) {
+        self.transform(transform);
+        self.draw(grid_position);
+    }
+
+    fn draw(&self, grid_position: &Position) {
         draw_circle(
             self.x + grid_position.x,
             self.y + grid_position.y,
@@ -54,22 +73,10 @@ impl Particle {
         );
     }
 
-    pub fn handle_collision(&self, grid: &Vec<Particle>) {
-        let mut transform = Transform::new(&self);
-
-        let new_x = self.x + self.vx;
-        let new_y = self.y + self.vy;
-        let diameter = self.radius * 2.;
-
-        // loop to all particles see if ok
-
-        //for other in grid.
-    }
-
-    pub fn transform(&mut self, transform: Transform) {
-        self.vx = transform.vx;
-        self.vy = transform.vy;
-        self.x = self.x + self.vx;
-        self.y = self.y + self.vy;
+    fn transform(&mut self, transform: Transform) {
+        self.vx = transform.vx();
+        self.vy = transform.vy();
+        self.x = transform.new_x();
+        self.y = transform.new_y();
     }
 }

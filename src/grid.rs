@@ -4,7 +4,6 @@ use std::{
     time::Duration,
 };
 
-use crate::particle;
 use crate::{
     fill_style::FillStyle,
     particle::{Particle, ParticleAttributes},
@@ -45,12 +44,6 @@ fn create_possibility_grid(
     }
 
     return spots;
-}
-
-fn particle_actions(position: &Position, particle: &mut Particle, transform: Transform) {
-    //particle.handle_collision(self);
-    particle.transform(transform);
-    particle.draw(&position);
 }
 
 impl Grid {
@@ -120,40 +113,44 @@ impl Grid {
 
     pub fn handle_particle(&mut self, vec_index: usize, spot_index: usize) -> bool {
         let particle = self.possibility_spots[vec_index][spot_index].borrow();
+
         if particle.queue_frame == self.frame {
             return false;
         }
 
         let mut transform = Transform::new(&particle);
 
-        let new_x = particle.x + transform.vx;
-        let new_y = particle.y + transform.vy;
-
-        let x_out_of_bounds = new_x < 0. || self.width <= new_x;
-        let y_out_of_bounds = new_y < 0. || self.height <= new_y;
+        let x_out_of_bounds = transform.new_x() < 0. || self.width <= transform.new_x();
+        let y_out_of_bounds = transform.new_y() < 0. || self.height <= transform.new_y();
 
         if x_out_of_bounds {
-            transform.vx = transform.vx * -1.;
+            transform.set_new_vx(transform.vx() * -1.);
         }
 
         if y_out_of_bounds {
-            transform.vy = transform.vy * -1.;
+            transform.set_new_vy(transform.vy() * -1.);
         }
 
-        let new_x_spot = self.possibility_x_index(particle.x + transform.vx);
-        let new_y_spot = self.possibility_y_index(particle.y + transform.vy);
+        let new_x_spot = self.possibility_x_index(transform.new_x());
+        let new_y_spot = self.possibility_y_index(transform.new_y());
+
         let new_vec_index = new_y_spot * self.possibility_x_count + new_x_spot;
+
+        for (index, other) in self.possibility_spots[new_vec_index].iter().enumerate() {
+            if index != spot_index {
+                particle.handle_collision(other, &mut transform);
+            }
+        }
 
         if vec_index != new_vec_index {
             let mut m_particle = self.possibility_spots[vec_index].remove(spot_index);
             m_particle.queue_frame = self.frame;
-            particle_actions(&self.position, &mut m_particle, transform);
-            self.possibility_spots[new_y_spot * self.possibility_x_count + new_x_spot]
-                .push(m_particle);
+            m_particle.update(&self.position, transform);
+            self.possibility_spots[new_vec_index].push(m_particle);
             return true;
         } else {
-            let mut m_particle = self.possibility_spots[vec_index][spot_index].borrow_mut();
-            particle_actions(&self.position, &mut m_particle, transform);
+            let m_particle = self.possibility_spots[vec_index][spot_index].borrow_mut();
+            m_particle.update(&self.position, transform);
             return false;
         }
     }
@@ -176,19 +173,19 @@ impl Grid {
 
             while spot_index < spot_len {
                 if self.handle_particle(vec_index, spot_index) {
-                    spot_len = spot_len - 1;
+                    spot_len -= 1;
                 } else {
-                    spot_index = spot_index + 1;
+                    spot_index += 1;
                 }
             }
         }
 
-        if self.frame % 50 == 0 {
+        if self.frame % 30 == 0 {
             self.duration = start.elapsed();
             //self.debug();
         }
 
-        self.frame = self.frame + 1;
+        self.frame += 1;
     }
 
     pub fn draw_ui(&self) {
@@ -207,7 +204,22 @@ impl Grid {
             20.0,
             WHITE,
         );
-        //draw_rectangle_lines(5., 5., 10., 10., 2., GREEN);
+
+        for x_index in 0..self.possibility_x_count * self.cell_x_count {
+            for y_index in 0..self.possibility_y_count * self.cell_y_count {
+                let x = self.position.x + (x_index * self.possibility_side_length) as f32;
+                let y = self.position.y + (y_index * self.possibility_side_length) as f32;
+
+                draw_rectangle_lines(
+                    x,
+                    y,
+                    self.possibility_side_length as f32,
+                    self.possibility_side_length as f32,
+                    0.3,
+                    LIGHTGRAY,
+                );
+            }
+        }
     }
 
     fn possibility_taken(&self, x_coord: f32, y_coord: f32) -> bool {

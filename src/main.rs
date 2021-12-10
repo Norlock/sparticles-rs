@@ -20,7 +20,7 @@ async fn main() {
     let attributes = ParticleAttributes {
         color: Color::from_rgba(20, 20, 200, 255),
         decay: 0.5,
-        diameter: 2.5,
+        diameter: 5.,
     };
 
     grid.fill(&attributes, 100, FillStyle::WhiteNoise);

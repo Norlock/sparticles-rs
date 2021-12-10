@@ -23,10 +23,33 @@ pub struct Particle {
 }
 
 pub struct ParticleAttributes {
-    pub diameter: f32,
     pub color: Color,
-    pub decay: f32,
+    /// number between 1 and 0. (percentage of bounciness).
     pub elasticity_fraction: f32,
+    /// number between 1 and 0. (percentage of loss).
+    pub decay_fraction: f32,
+    pub weight: f32,
+    pub diameter: f32,
+}
+
+fn set_vx_force(transform: &mut Transform, other: &Particle) {
+    if 0. < transform.vx() && 0. < other.vx {
+        transform.set_new_vx(transform.vx().max(other.vx));
+    } else if transform.vx() < 0. && other.vx < 0. {
+        transform.set_new_vx(transform.vx().min(other.vx));
+    } else {
+        transform.set_new_vx(transform.vx() + other.vx);
+    }
+}
+
+fn set_vy_force(transform: &mut Transform, other: &Particle) {
+    if 0. < transform.vy() && 0. < other.vy {
+        transform.set_new_vx(transform.vy().max(other.vy));
+    } else if transform.vx() < 0. && other.vy < 0. {
+        transform.set_new_vx(transform.vy().min(other.vy));
+    } else {
+        transform.set_new_vx(transform.vy() + other.vy);
+    }
 }
 
 // TODO add factory that returns mesh based on particle
@@ -37,7 +60,7 @@ impl Particle {
             y,
             vx: 1.5,
             vy: 1.,
-            decay_fraction: attributes.decay,
+            decay_fraction: attributes.decay_fraction,
             color: attributes.color.clone(),
             radius: attributes.diameter / 2.,
             diameter: attributes.diameter,
@@ -55,7 +78,9 @@ impl Particle {
 
         if inside_x && inside_y {
             //let
-            // TODO determine right angle of bounce
+            // TODO incorporate weight.
+            set_vx_force(transform, other);
+            set_vy_force(transform, other);
             transform.set_new_vx(transform.vx() * (-1. * self.elasticity_fraction));
             transform.set_new_vy(transform.vy() * (-1. * self.elasticity_fraction));
         }

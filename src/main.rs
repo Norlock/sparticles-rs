@@ -14,17 +14,18 @@ use position::Position;
 
 #[macroquad::main("BasicShapes")]
 async fn main() {
-    let position = Position::new(50., 50.);
+    let position = Position::new(100., 100.);
     let mut grid = Grid::new(5, 5, 5, 5, 20, position, true);
 
     let attributes = ParticleAttributes {
         color: Color::from_rgba(20, 20, 200, 255),
-        decay: 0.5,
+        decay_fraction: 0.5,
         diameter: 5.,
         elasticity_fraction: 0.9,
+        weight: 1.,
     };
 
-    grid.fill(&attributes, 100, FillStyle::WhiteNoise);
+    grid.fill(&attributes, 20, FillStyle::WhiteNoise);
     //grid.fill(&attributes, 200, FillStyle::WhiteNoise);
 
     loop {

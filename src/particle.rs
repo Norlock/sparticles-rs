@@ -2,7 +2,6 @@ use macroquad::miniquad::gl::UINT32_MAX;
 use macroquad::prelude::draw_circle;
 use macroquad::prelude::Color;
 
-use crate::position;
 use crate::position::Position;
 use crate::transform::Transform;
 
@@ -16,16 +15,18 @@ pub struct Particle {
     pub radius: f32,
     pub diameter: f32,
     pub color: Color,
-    pub decay: f32,
-    pub vx_energy: u16,
-    pub vy_energy: u16,
     pub frame: u16,
+    /// number between 1 and 0. (percentage of bounciness).
+    pub elasticity_fraction: f32,
+    /// number between 1 and 0. (percentage of loss).
+    pub decay_fraction: f32,
 }
 
 pub struct ParticleAttributes {
     pub diameter: f32,
     pub color: Color,
     pub decay: f32,
+    pub elasticity_fraction: f32,
 }
 
 // TODO add factory that returns mesh based on particle
@@ -36,13 +37,12 @@ impl Particle {
             y,
             vx: 1.5,
             vy: 1.,
-            decay: attributes.decay,
+            decay_fraction: attributes.decay,
             color: attributes.color.clone(),
             radius: attributes.diameter / 2.,
             diameter: attributes.diameter,
+            elasticity_fraction: attributes.elasticity_fraction,
             frame: 0,
-            vx_energy: 0,
-            vy_energy: 0,
             queue_frame: UINT32_MAX,
         }
     }
@@ -54,6 +54,7 @@ impl Particle {
             other.y <= transform.new_y() && transform.new_y() <= other.y + other.diameter;
 
         if inside_x && inside_y {
+            //let
             transform.set_new_vx(transform.vx() * -1.);
             transform.set_new_vy(transform.vy() * -1.);
         }

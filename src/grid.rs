@@ -93,29 +93,35 @@ impl Grid {
         println!("------------------");
     }
 
-    pub fn cell_x_index(&self, x_coord: f32) -> usize {
+    fn cell_x_index(&self, x_coord: f32) -> usize {
         x_coord as usize / self.cell_width
     }
 
-    pub fn cell_y_index(&self, y_coord: f32) -> usize {
+    fn cell_y_index(&self, y_coord: f32) -> usize {
         y_coord as usize / self.cell_height
     }
 
-    pub fn possibility_x_index(&self, x_coord: f32) -> usize {
+    fn possibility_x_index(&self, x_coord: f32) -> usize {
         let x_residual = x_coord as usize % self.cell_width;
         x_residual / self.possibility_side_length
     }
 
-    pub fn possibility_y_index(&self, y_coord: f32) -> usize {
+    fn possibility_y_index(&self, y_coord: f32) -> usize {
         let y_residual = y_coord as usize % self.cell_height;
         y_residual / self.possibility_side_length
     }
 
+    fn possibility_index(&self, x_index: usize, y_index: usize) -> usize {
+        self.possibility_x_count * y_index + x_index
+    }
+    /**
+     * returns true if index needs to be incremented
+     */
     pub fn handle_particle(&mut self, vec_index: usize, spot_index: usize) -> bool {
         let particle = self.possibility_spots[vec_index][spot_index].borrow();
 
         if particle.queue_frame == self.frame {
-            return false;
+            return true;
         }
 
         let mut transform = Transform::new(&particle);
@@ -124,18 +130,19 @@ impl Grid {
         let y_out_of_bounds = transform.new_y() < 0. || self.height <= transform.new_y();
 
         if x_out_of_bounds {
-            transform.set_new_vx(transform.vx() * -1.);
+            transform.set_new_vx(transform.vx() * (-1. * particle.elasticity_fraction));
         }
 
         if y_out_of_bounds {
-            transform.set_new_vy(transform.vy() * -1.);
+            transform.set_new_vy(transform.vy() * (-1. * particle.elasticity_fraction));
         }
 
         let new_x_spot = self.possibility_x_index(transform.new_x());
         let new_y_spot = self.possibility_y_index(transform.new_y());
 
-        let new_vec_index = new_y_spot * self.possibility_x_count + new_x_spot;
+        let new_vec_index = self.possibility_index(new_x_spot, new_y_spot);
 
+        // todo get more list if element is hovering over multiple spots.
         for (index, other) in self.possibility_spots[new_vec_index].iter().enumerate() {
             if index != spot_index {
                 particle.handle_collision(other, &mut transform);
@@ -143,15 +150,15 @@ impl Grid {
         }
 
         if vec_index != new_vec_index {
-            let mut m_particle = self.possibility_spots[vec_index].remove(spot_index);
+            let mut m_particle = self.possibility_spots[vec_index].swap_remove(spot_index);
             m_particle.queue_frame = self.frame;
             m_particle.update(&self.position, transform);
             self.possibility_spots[new_vec_index].push(m_particle);
-            return true;
+            return false;
         } else {
             let m_particle = self.possibility_spots[vec_index][spot_index].borrow_mut();
             m_particle.update(&self.position, transform);
-            return false;
+            return true;
         }
     }
 
@@ -159,7 +166,6 @@ impl Grid {
         self.particle_count = self.particle_count + count;
 
         match fill_style {
-            FillStyle::BlueNoise => self.fill_blue_noise(attributes, count),
             FillStyle::WhiteNoise => self.fill_white_noise(attributes, count),
         }
     }
@@ -168,13 +174,10 @@ impl Grid {
         let start = Instant::now();
 
         for vec_index in 0..self.possibility_spots.len() {
-            let mut spot_len = self.possibility_spots[vec_index].len();
             let mut spot_index = 0;
 
-            while spot_index < spot_len {
+            while spot_index < self.possibility_spots[vec_index].len() {
                 if self.handle_particle(vec_index, spot_index) {
-                    spot_len -= 1;
-                } else {
                     spot_index += 1;
                 }
             }
@@ -205,21 +208,21 @@ impl Grid {
             WHITE,
         );
 
-        for x_index in 0..self.possibility_x_count * self.cell_x_count {
-            for y_index in 0..self.possibility_y_count * self.cell_y_count {
-                let x = self.position.x + (x_index * self.possibility_side_length) as f32;
-                let y = self.position.y + (y_index * self.possibility_side_length) as f32;
+        //for x_index in 0..self.possibility_x_count * self.cell_x_count {
+        //for y_index in 0..self.possibility_y_count * self.cell_y_count {
+        //let x = self.position.x + (x_index * self.possibility_side_length) as f32;
+        //let y = self.position.y + (y_index * self.possibility_side_length) as f32;
 
-                draw_rectangle_lines(
-                    x,
-                    y,
-                    self.possibility_side_length as f32,
-                    self.possibility_side_length as f32,
-                    0.3,
-                    LIGHTGRAY,
-                );
-            }
-        }
+        //draw_rectangle_lines(
+        //x,
+        //y,
+        //self.possibility_side_length as f32,
+        //self.possibility_side_length as f32,
+        //0.3,
+        //LIGHTGRAY,
+        //);
+        //}
+        //}
     }
 
     fn possibility_taken(&self, x_coord: f32, y_coord: f32) -> bool {
@@ -229,24 +232,20 @@ impl Grid {
         let poss_x_index = self.possibility_x_index(x_coord);
         let poss_y_index = self.possibility_y_index(y_coord);
 
-        self.possibility_spots[poss_y_index * self.possibility_x_count + poss_x_index]
+        self.possibility_spots[self.possibility_index(poss_x_index, poss_y_index)]
             .iter()
             .any(|p| {
                 self.cell_x_index(p.x) == cell_x_index && self.cell_y_index(p.y) == cell_y_index
             })
     }
 
-    fn fill_blue_noise(&mut self, attributes: &ParticleAttributes, count: u32) {}
-
     fn fill_white_noise(&mut self, attributes: &ParticleAttributes, count: u32) {
-        //fn fill_cell(x_coord: u16, y_coord: u16) {}
-
-        let mut i = 0;
+        let mut i: u32 = 0;
         while i < count {
             let x_coord = rand::gen_range(0., self.width);
             let y_coord = rand::gen_range(0., self.height);
-            if !self.possibility_taken(x_coord as f32, y_coord as f32) {
-                self.add_particle(x_coord as f32, y_coord as f32, &attributes);
+            if !self.possibility_taken(x_coord, y_coord) {
+                self.add_particle(x_coord, y_coord, &attributes);
                 i = i + 1;
             }
         }
@@ -254,11 +253,10 @@ impl Grid {
 
     fn add_particle(&mut self, x_coord: f32, y_coord: f32, attributes: &ParticleAttributes) {
         let particle = Particle::new(x_coord, y_coord, attributes);
-        let possibility_x_index = self.possibility_x_index(x_coord);
-        let possibility_y_index = self.possibility_y_index(y_coord);
-        self.possibility_spots
-            [possibility_y_index * self.possibility_x_count + possibility_x_index]
-            .push(particle);
+        let poss_x_index = self.possibility_x_index(x_coord);
+        let poss_y_index = self.possibility_y_index(y_coord);
+        let poss_index = self.possibility_index(poss_x_index, poss_y_index);
+        self.possibility_spots[poss_index].push(particle);
     }
 
     pub fn start(&mut self) {}

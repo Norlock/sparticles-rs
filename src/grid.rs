@@ -1,8 +1,5 @@
+use std::time::Duration;
 use std::time::Instant;
-use std::{
-    borrow::{Borrow, BorrowMut},
-    time::Duration,
-};
 
 use crate::{
     fill_style::FillStyle,
@@ -117,12 +114,8 @@ impl Grid {
     /**
      * returns true if index needs to be incremented
      */
-    pub fn handle_particle(&mut self, vec_index: usize, spot_index: usize) -> bool {
-        let particle = self.possibility_spots[vec_index][spot_index].borrow();
-
-        if particle.queue_frame == self.frame {
-            return true;
-        }
+    pub fn handle_particle(&mut self, vec_index: usize, spot_index: usize) {
+        let mut particle = self.possibility_spots[vec_index].swap_remove(spot_index);
 
         let mut transform = Transform::new(&particle);
 
@@ -143,23 +136,19 @@ impl Grid {
         let new_vec_index = self.possibility_index(new_x_spot, new_y_spot);
 
         // todo get more list if element is hovering over multiple spots.
-        for (index, other) in self.possibility_spots[new_vec_index].iter().enumerate() {
-            if index != spot_index {
-                particle.handle_collision(other, &mut transform);
-            }
+        for other in self.possibility_spots[new_vec_index].iter_mut() {
+            // TODO modify other vx/vy.
+            // Store energy instead of direct velocity.
+            particle.handle_collision(other, &mut transform);
         }
 
         if vec_index != new_vec_index {
-            let mut m_particle = self.possibility_spots[vec_index].swap_remove(spot_index);
-            m_particle.queue_frame = self.frame;
-            m_particle.update(&self.position, transform);
-            self.possibility_spots[new_vec_index].push(m_particle);
-            return false;
-        } else {
-            let m_particle = self.possibility_spots[vec_index][spot_index].borrow_mut();
-            m_particle.update(&self.position, transform);
-            return true;
+            particle.queue_frame = self.frame;
         }
+
+        particle.update(&self.position, transform);
+
+        self.possibility_spots[new_vec_index].push(particle);
     }
 
     pub fn fill(&mut self, attributes: &ParticleAttributes, count: u32, fill_style: FillStyle) {
@@ -174,11 +163,10 @@ impl Grid {
         let start = Instant::now();
 
         for vec_index in 0..self.possibility_spots.len() {
-            let mut spot_index = 0;
-
-            while spot_index < self.possibility_spots[vec_index].len() {
-                if self.handle_particle(vec_index, spot_index) {
-                    spot_index += 1;
+            let last_index = self.possibility_spots[vec_index].len() - 1;
+            for spot_index in (0..last_index).rev() {
+                if self.possibility_spots[vec_index][spot_index].queue_frame != self.frame {
+                    self.handle_particle(vec_index, spot_index);
                 }
             }
         }

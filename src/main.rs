@@ -25,8 +25,8 @@ async fn main() {
         weight: 1.,
     };
 
-    grid.fill(&attributes, 20, FillStyle::WhiteNoise);
-    //grid.fill(&attributes, 200, FillStyle::WhiteNoise);
+    grid.fill(&attributes, 200, FillStyle::WhiteNoise);
+    grid.fill(&attributes, 50, FillStyle::WhiteNoise);
 
     loop {
         //clear_background(BLACK);

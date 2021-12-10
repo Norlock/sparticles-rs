@@ -21,10 +21,11 @@ async fn main() {
         color: Color::from_rgba(20, 20, 200, 255),
         decay: 0.5,
         diameter: 5.,
+        elasticity_fraction: 0.9,
     };
 
     grid.fill(&attributes, 100, FillStyle::WhiteNoise);
-    grid.fill(&attributes, 200, FillStyle::WhiteNoise);
+    //grid.fill(&attributes, 200, FillStyle::WhiteNoise);
 
     loop {
         //clear_background(BLACK);

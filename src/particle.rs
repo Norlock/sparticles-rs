@@ -55,8 +55,9 @@ impl Particle {
 
         if inside_x && inside_y {
             //let
-            transform.set_new_vx(transform.vx() * -1.);
-            transform.set_new_vy(transform.vy() * -1.);
+            // TODO determine right angle of bounce
+            transform.set_new_vx(transform.vx() * (-1. * self.elasticity_fraction));
+            transform.set_new_vy(transform.vy() * (-1. * self.elasticity_fraction));
         }
     }
 

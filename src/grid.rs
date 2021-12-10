@@ -115,6 +115,10 @@ impl Grid {
      * returns true if index needs to be incremented
      */
     pub fn handle_particle(&mut self, vec_index: usize, spot_index: usize) {
+        if self.possibility_spots[vec_index][spot_index].queue_frame == self.frame {
+            return;
+        }
+
         let mut particle = self.possibility_spots[vec_index].swap_remove(spot_index);
 
         let mut transform = Transform::new(&particle);
@@ -142,11 +146,11 @@ impl Grid {
             particle.handle_collision(other, &mut transform);
         }
 
+        particle.update(&self.position, transform);
+
         if vec_index != new_vec_index {
             particle.queue_frame = self.frame;
         }
-
-        particle.update(&self.position, transform);
 
         self.possibility_spots[new_vec_index].push(particle);
     }
@@ -163,15 +167,12 @@ impl Grid {
         let start = Instant::now();
 
         for vec_index in 0..self.possibility_spots.len() {
-            let last_index = self.possibility_spots[vec_index].len() - 1;
-            for spot_index in (0..last_index).rev() {
-                if self.possibility_spots[vec_index][spot_index].queue_frame != self.frame {
-                    self.handle_particle(vec_index, spot_index);
-                }
+            for index in (0..self.possibility_spots[vec_index].len()).rev() {
+                self.handle_particle(vec_index, index);
             }
         }
 
-        if self.frame % 30 == 0 {
+        if self.frame % 50 == 0 {
             self.duration = start.elapsed();
             //self.debug();
         }

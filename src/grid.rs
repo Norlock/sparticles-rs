@@ -11,7 +11,7 @@ use macroquad::prelude::*;
 
 #[derive(Debug)]
 pub struct Grid {
-    pub possibility_spots: Vec<Vec<Particle<'static>>>,
+    pub possibility_spots: Vec<Vec<Particle>>,
     pub cell_x_count: usize,
     pub cell_y_count: usize,
     pub possibility_x_count: usize,
@@ -30,7 +30,7 @@ pub struct Grid {
 fn create_possibility_grid(
     possibility_x_count: usize,
     possiblity_y_count: usize,
-) -> Vec<Vec<Particle<'static>>> {
+) -> Vec<Vec<Particle>> {
     let mut spots: Vec<Vec<Particle>> = Vec::new();
 
     for _ in 0..possibility_x_count {

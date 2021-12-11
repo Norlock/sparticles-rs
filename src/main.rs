@@ -7,10 +7,13 @@ mod particle;
 mod position;
 mod transform;
 
+use crate::animation::AnimationData;
+use std::rc::Rc;
+
 use crate::grid::Grid;
 use fill_style::FillStyle;
 use macroquad::prelude::*;
-use particle::ParticleAttributes;
+use particle::{InitFrame, ParticleAttributes};
 use position::Position;
 
 #[macroquad::main("BasicShapes")]
@@ -18,16 +21,31 @@ async fn main() {
     let position = Position::new(100., 100.);
     let mut grid = Grid::new(10, 10, 5, 5, 20, position);
 
+    fn animate(data: &mut AnimationData, frame: u32) {
+        //if frame % 50 == 0 {
+        //data.color.r = rand::gen_range(0., 1.);
+        //data.color.g = rand::gen_range(0., 1.);
+        //data.color.b = rand::gen_range(0., 1.);
+        //}
+
+        if frame % 20 == 0 {
+            data.color.a = (frame as f32 / 50.).sin().abs();
+        }
+    }
+
     let attributes = ParticleAttributes {
         color: Color::from_rgba(20, 20, 200, 255),
         decay_fraction: 0.5,
-        diameter: 5.,
+        diameter: 10.,
         elasticity_fraction: 0.9,
         weight: 1.,
+        animation: Rc::new(animate),
+        last_frame: 100000,
+        init_frame: InitFrame::Random,
     };
 
     grid.fill(&attributes, 200, FillStyle::WhiteNoise);
-    grid.fill(&attributes, 50, FillStyle::WhiteNoise);
+    //grid.fill(&attributes, 50, FillStyle::WhiteNoise);
 
     loop {
         //clear_background(BLACK);

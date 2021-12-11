@@ -1,19 +1,8 @@
-use crate::particle::Particle;
-use std::fmt;
+use macroquad::prelude::Color;
 
-type Animate = fn(particle: &mut Particle);
+pub type Animate = fn(data: &mut AnimationData, frame: u32);
 
-pub struct Animation {
-    pub min_frame: u32,
-    pub max_frame: u32,
-    pub animate: Animate,
-}
-
-impl fmt::Debug for Animation {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Animation")
-            .field("min_frame", &self.min_frame)
-            .field("max_frame", &self.max_frame)
-            .finish()
-    }
+pub struct AnimationData {
+    pub color: Color,
+    pub diameter: f32,
 }

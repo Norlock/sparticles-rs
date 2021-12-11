@@ -1,3 +1,4 @@
+mod animation;
 mod container;
 mod fill_style;
 mod grid;
@@ -15,7 +16,7 @@ use position::Position;
 #[macroquad::main("BasicShapes")]
 async fn main() {
     let position = Position::new(100., 100.);
-    let mut grid = Grid::new(5, 5, 5, 5, 20, position, true);
+    let mut grid = Grid::new(10, 10, 5, 5, 20, position);
 
     let attributes = ParticleAttributes {
         color: Color::from_rgba(20, 20, 200, 255),

@@ -2,11 +2,12 @@ use macroquad::miniquad::gl::UINT32_MAX;
 use macroquad::prelude::draw_circle;
 use macroquad::prelude::Color;
 
+use crate::animation::Animation;
 use crate::position::Position;
 use crate::transform::Transform;
 
 #[derive(Debug)]
-pub struct Particle {
+pub struct Particle<'a> {
     pub queue_frame: u32,
     pub x: f32,
     pub y: f32,
@@ -15,11 +16,13 @@ pub struct Particle {
     pub radius: f32,
     pub diameter: f32,
     pub color: Color,
+    pub weight: f32,
     pub frame: u16,
     /// number between 1 and 0. (percentage of bounciness).
     pub elasticity_fraction: f32,
     /// number between 1 and 0. (percentage of loss).
     pub decay_fraction: f32,
+    pub animations: Vec<&'a Animation>,
 }
 
 pub struct ParticleAttributes {
@@ -33,6 +36,7 @@ pub struct ParticleAttributes {
 }
 
 fn set_vx_force(transform: &mut Transform, other: &Particle) {
+    // swap energies
     if 0. < transform.vx() && 0. < other.vx {
         transform.set_new_vx(transform.vx().max(other.vx));
     } else if transform.vx() < 0. && other.vx < 0. {
@@ -53,7 +57,7 @@ fn set_vy_force(transform: &mut Transform, other: &Particle) {
 }
 
 // TODO add factory that returns mesh based on particle
-impl Particle {
+impl Particle<'_> {
     pub fn new(x: f32, y: f32, attributes: &ParticleAttributes) -> Self {
         Self {
             x,
@@ -65,8 +69,10 @@ impl Particle {
             radius: attributes.diameter / 2.,
             diameter: attributes.diameter,
             elasticity_fraction: attributes.elasticity_fraction,
+            weight: attributes.weight,
             frame: 0,
             queue_frame: UINT32_MAX,
+            animations: Vec::new(),
         }
     }
 
@@ -81,8 +87,10 @@ impl Particle {
             // TODO incorporate weight.
             set_vx_force(transform, other);
             set_vy_force(transform, other);
-            transform.set_new_vx(transform.vx() * (-1. * self.elasticity_fraction));
-            transform.set_new_vy(transform.vy() * (-1. * self.elasticity_fraction));
+
+            let elasticity_force = -1. * self.elasticity_fraction;
+            transform.set_new_vx(transform.vx() * elasticity_force);
+            transform.set_new_vy(transform.vy() * elasticity_force);
         }
     }
 

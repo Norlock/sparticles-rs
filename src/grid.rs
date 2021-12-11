@@ -11,14 +11,13 @@ use macroquad::prelude::*;
 
 #[derive(Debug)]
 pub struct Grid {
-    pub possibility_spots: Vec<Vec<Particle>>,
+    pub possibility_spots: Vec<Vec<Particle<'static>>>,
     pub cell_x_count: usize,
     pub cell_y_count: usize,
     pub possibility_x_count: usize,
     pub possibility_y_count: usize,
     pub possibility_side_length: usize,
     pub position: Position,
-    pub show_ui: bool,
     pub frame: u32,
     pub width: f32,
     pub height: f32,
@@ -31,7 +30,7 @@ pub struct Grid {
 fn create_possibility_grid(
     possibility_x_count: usize,
     possiblity_y_count: usize,
-) -> Vec<Vec<Particle>> {
+) -> Vec<Vec<Particle<'static>>> {
     let mut spots: Vec<Vec<Particle>> = Vec::new();
 
     for _ in 0..possibility_x_count {
@@ -51,7 +50,6 @@ impl Grid {
         possibility_y_count: usize,
         possibility_side_length: usize,
         position: Position,
-        show_ui: bool,
     ) -> Self {
         let cell_width = possibility_x_count * possibility_side_length;
         let cell_height = possibility_y_count * possibility_side_length;
@@ -66,7 +64,6 @@ impl Grid {
             possibility_y_count,
             possibility_side_length,
             position,
-            show_ui,
             width,
             height,
             possibility_spots,
@@ -125,13 +122,14 @@ impl Grid {
 
         let x_out_of_bounds = transform.new_x() < 0. || self.width <= transform.new_x();
         let y_out_of_bounds = transform.new_y() < 0. || self.height <= transform.new_y();
+        let elasticity_force = -1. * particle.elasticity_fraction;
 
         if x_out_of_bounds {
-            transform.set_new_vx(transform.vx() * (-1. * particle.elasticity_fraction));
+            transform.set_new_vx(transform.vx() * elasticity_force);
         }
 
         if y_out_of_bounds {
-            transform.set_new_vy(transform.vy() * (-1. * particle.elasticity_fraction));
+            transform.set_new_vy(transform.vy() * elasticity_force);
         }
 
         let new_x_spot = self.possibility_x_index(transform.new_x());
@@ -251,4 +249,107 @@ impl Grid {
     pub fn start(&mut self) {}
 
     pub fn stop(&mut self) {}
+}
+
+#[test]
+fn create_grid() {
+    let grid = Grid::new(5, 5, 10, 10, 10, Position::new(1., 2.));
+
+    assert_eq!(grid.cell_width, 100); // 10 * 10
+    assert_eq!(grid.cell_height, 100);
+    assert_eq!(grid.possibility_spots.len(), 100); // 10 * 10
+    assert_eq!(grid.width, 500.);
+    assert_eq!(grid.height, 500.);
+    assert_eq!(grid.position.x, 1.);
+    assert_eq!(grid.position.y, 2.);
+}
+
+#[test]
+fn fill_grid() {
+    let mut grid = Grid::new(5, 5, 10, 10, 10, Position::new(1., 2.));
+    let attributes = ParticleAttributes {
+        color: Color::from_rgba(20, 20, 200, 255),
+        decay_fraction: 0.5,
+        diameter: 5.,
+        elasticity_fraction: 0.9,
+        weight: 1.,
+    };
+
+    grid.fill(&attributes, 200, FillStyle::WhiteNoise);
+
+    assert_eq!(grid.particle_count, 200);
+
+    let len = grid
+        .possibility_spots
+        .iter()
+        .fold(0, |acc, x| acc + x.len()) as u32;
+
+    assert_eq!(grid.particle_count, len);
+}
+
+#[test]
+fn updates_frame() {
+    let mut grid = Grid::new(5, 5, 10, 10, 10, Position::new(1., 2.));
+    assert_eq!(0, grid.frame);
+    grid.draw();
+    assert_eq!(1, grid.frame);
+}
+
+#[test]
+fn add_particle() {
+    let mut grid = Grid::new(5, 5, 10, 10, 10, Position::new(1., 2.));
+
+    let attributes = ParticleAttributes {
+        color: Color::from_rgba(20, 20, 200, 255),
+        decay_fraction: 0.5,
+        diameter: 5.,
+        elasticity_fraction: 0.9,
+        weight: 1.,
+    };
+
+    grid.add_particle(115., 105., &attributes);
+    assert_eq!(1, grid.possibility_spots[1].len());
+
+    // if y is 1 more, then the pos in array is + poss_x_count (10).
+    grid.add_particle(105., 115., &attributes);
+    assert_eq!(1, grid.possibility_spots[10].len());
+
+    let particle = &grid.possibility_spots[1][0];
+
+    assert_eq!(1, grid.possibility_x_index(particle.x));
+    assert_eq!(0, grid.possibility_y_index(particle.y));
+
+    assert_eq!(1, grid.cell_x_index(particle.x));
+    assert_eq!(1, grid.cell_y_index(particle.y));
+
+    // colors is a number between 0 - 1, (255 / 255).
+    assert_eq!(1., particle.color.a);
+
+    assert_eq!(5., particle.diameter);
+    assert_eq!(2.5, particle.radius);
+    assert_eq!(0.5, particle.decay_fraction);
+    assert_eq!(0.9, particle.elasticity_fraction);
+    assert_eq!(1., particle.weight);
+}
+
+#[test]
+fn moves_particle() {
+    let mut grid = Grid::new(5, 5, 10, 10, 10, Position::new(1., 2.));
+
+    let attributes = ParticleAttributes {
+        color: Color::from_rgba(20, 20, 200, 255),
+        decay_fraction: 0.5,
+        diameter: 5.,
+        elasticity_fraction: 0.9,
+        weight: 1.,
+    };
+
+    grid.add_particle(5., 5., &attributes);
+
+    assert_eq!(1, grid.possibility_spots[0].len());
+
+    //grid.possibility_spots[0][0].vx += 1.;
+    //grid.draw();
+
+    //assert_eq!(1, grid.possibility_spots[1].len());
 }

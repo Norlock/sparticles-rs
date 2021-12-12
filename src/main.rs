@@ -19,7 +19,7 @@ use position::Position;
 #[macroquad::main("BasicShapes")]
 async fn main() {
     let position = Position::new(100., 100.);
-    let mut grid = Grid::new(10, 10, 5, 5, 20, position);
+    let mut grid = Grid::new(5, 5, 5, 5, 20, position);
 
     fn animate(data: &mut AnimationData, frame: u32) {
         //if frame % 50 == 0 {
@@ -28,17 +28,17 @@ async fn main() {
         //data.color.b = rand::gen_range(0., 1.);
         //}
 
-        if frame % 20 == 0 {
-            data.color.a = (frame as f32 / 50.).sin().abs();
-        }
+        //if frame % 20 == 0 {
+        //data.color.a = (frame as f32 / 50.).sin().abs();
+        //}
     }
 
     fn animate2(data: &mut AnimationData, frame: u32) {
-        if frame % 50 == 0 {
-            data.color.r = rand::gen_range(0., 1.);
-            data.color.g = rand::gen_range(0., 1.);
-            data.color.b = rand::gen_range(0., 1.);
-        }
+        //if frame % 50 == 0 {
+        //data.color.r = rand::gen_range(0., 1.);
+        //data.color.g = rand::gen_range(0., 1.);
+        //data.color.b = rand::gen_range(0., 1.);
+        //}
 
         //if frame % 20 == 0 {
         //data.color.a = (frame as f32 / 50.).sin().abs();
@@ -59,8 +59,6 @@ async fn main() {
     grid.fill(&attributes, 100, FillStyle::WhiteNoise);
 
     attributes.animation = Rc::new(animate2);
-
-    grid.fill(&attributes, 100, FillStyle::WhiteNoise);
 
     loop {
         //clear_background(BLACK);

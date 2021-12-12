@@ -49,36 +49,36 @@ pub struct ParticleAttributes {
 
 fn set_vx_force(transform: &mut Transform, other: &mut Particle) {
     // swap energies
-    //let tmp_vx = transform.vx();
-    //transform.set_new_vx(other.vx);
-    //other.vx = tmp_vx;
+    let tmp_vx = transform.vx();
+    transform.set_new_vx(other.vx);
+    other.vx = tmp_vx;
     // TODO swap velocities is only correct if there is no difference in weight.
     // in future calculate energy
 
-    if 0. < transform.vx() && 0. < other.vx || transform.vx() < 0. && other.vx < 0. {
-        let tmp_vx = transform.vx();
-        transform.set_new_vx(other.vx);
-        other.vx = tmp_vx;
-    } else {
-        transform.set_new_vx(transform.vx() + other.vx);
-    }
+    //if 0. < transform.vx() && 0. < other.vx || transform.vx() < 0. && other.vx < 0. {
+    //let tmp_vx = transform.vx();
+    //transform.set_new_vx(other.vx);
+    //other.vx = tmp_vx;
+    //} else {
+    //transform.set_new_vx(transform.vx() + other.vx);
+    //}
 }
 
 fn set_vy_force(transform: &mut Transform, other: &mut Particle) {
     // swap energies
-    //let tmp_vy = transform.vy();
-    //transform.set_new_vy(other.vy);
-    //other.vy = tmp_vx;
+    let tmp_vy = transform.vy();
+    transform.set_new_vy(other.vy);
+    other.vy = tmp_vy;
     // TODO swap velocities is only correct if there is no difference in weight.
     // in future calculate energy
 
-    if 0. < transform.vy() && 0. < other.vy {
-        transform.set_new_vx(transform.vy().max(other.vy));
-    } else if transform.vx() < 0. && other.vy < 0. {
-        transform.set_new_vx(transform.vy().min(other.vy));
-    } else {
-        transform.set_new_vx(transform.vy() + other.vy);
-    }
+    //if 0. < transform.vy() && 0. < other.vy {
+    //transform.set_new_vx(transform.vy().max(other.vy));
+    //} else if transform.vx() < 0. && other.vy < 0. {
+    //transform.set_new_vx(transform.vy().min(other.vy));
+    //} else {
+    //transform.set_new_vx(transform.vy() + other.vy);
+    //}
 }
 
 // TODO add factory that returns mesh based on particle
@@ -123,7 +123,7 @@ impl Particle {
             set_vx_force(transform, other);
             set_vy_force(transform, other);
 
-            let elasticity_force = -1. * self.elasticity_fraction;
+            let elasticity_force = 1. * self.elasticity_fraction;
             transform.set_new_vx(transform.vx() * elasticity_force);
             transform.set_new_vy(transform.vy() * elasticity_force);
         }

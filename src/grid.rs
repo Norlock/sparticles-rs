@@ -154,7 +154,11 @@ impl Grid {
             }
         }
 
-        new_vec_index
+        // Collision can have changed original (new) spot.
+        let new_x_spot = self.possibility_x_index(particle.x);
+        let new_y_spot = self.possibility_y_index(particle.y);
+
+        self.possibility_index(new_x_spot, new_y_spot)
     }
 
     /**
@@ -168,8 +172,9 @@ impl Grid {
         let new_x = particle.x + transform.vx;
         let new_y = particle.y + transform.vy;
 
-        let x_out_of_bounds = new_x < 0. || self.width <= new_x;
-        let y_out_of_bounds = new_y < 0. || self.height <= new_y;
+        let x_out_of_bounds = new_x < 0. || self.width <= new_x + particle.diameter;
+        let y_out_of_bounds = new_y < 0. || self.height <= new_y + particle.diameter;
+        // Inverse direction.
         let elasticity_force = -1. * particle.elasticity_fraction;
 
         if x_out_of_bounds {
@@ -182,7 +187,7 @@ impl Grid {
 
         let new_vec_index = self.handle_collision(&mut particle, &mut transform);
 
-        particle.update(&self.position, transform);
+        particle.update(&self.position, transform, self.width, self.height);
 
         if vec_index != new_vec_index {
             particle.queue_frame = self.frame;
@@ -237,21 +242,21 @@ impl Grid {
             WHITE,
         );
 
-        //for x_index in 0..self.possibility_x_count * self.cell_x_count {
-        //for y_index in 0..self.possibility_y_count * self.cell_y_count {
-        //let x = self.position.x + (x_index * self.possibility_side_length) as f32;
-        //let y = self.position.y + (y_index * self.possibility_side_length) as f32;
+        for x_index in 0..self.possibility_x_count * self.cell_x_count {
+            for y_index in 0..self.possibility_y_count * self.cell_y_count {
+                let x = self.position.x + (x_index * self.possibility_side_length) as f32;
+                let y = self.position.y + (y_index * self.possibility_side_length) as f32;
 
-        //draw_rectangle_lines(
-        //x,
-        //y,
-        //self.possibility_side_length as f32,
-        //self.possibility_side_length as f32,
-        //0.3,
-        //LIGHTGRAY,
-        //);
-        //}
-        //}
+                draw_rectangle_lines(
+                    x,
+                    y,
+                    self.possibility_side_length as f32,
+                    self.possibility_side_length as f32,
+                    0.3,
+                    LIGHTGRAY,
+                );
+            }
+        }
     }
 
     fn possibility_taken(&self, x_coord: f32, y_coord: f32) -> bool {

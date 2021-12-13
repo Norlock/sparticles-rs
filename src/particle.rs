@@ -125,9 +125,15 @@ impl Particle {
         other.vx = other_vy * other.elasticity_fraction;
     }
 
-    pub fn update(&mut self, grid_position: &Position, transform: Transform) {
+    pub fn update(
+        &mut self,
+        grid_position: &Position,
+        transform: Transform,
+        max_width: f32,
+        max_height: f32,
+    ) {
         self.animate();
-        self.transform(transform);
+        self.transform(transform, max_width, max_height);
         self.draw(grid_position);
     }
 
@@ -160,11 +166,23 @@ impl Particle {
         );
     }
 
-    fn transform(&mut self, transform: Transform) {
+    fn transform(&mut self, transform: Transform, max_width: f32, max_height: f32) {
         self.vx = transform.vx;
         self.vy = transform.vy;
         self.x += transform.vx;
         self.y += transform.vy;
+
+        if self.x < 0. {
+            self.x = 0.;
+        } else if max_width <= self.x + self.diameter {
+            self.x = max_width - 1. - self.diameter;
+        }
+
+        if self.y < 0. {
+            self.y = 0.;
+        } else if max_height <= self.y + self.diameter {
+            self.y = max_height - 1. - self.diameter;
+        }
     }
 }
 

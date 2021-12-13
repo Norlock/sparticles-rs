@@ -19,11 +19,11 @@ pub struct Particle {
     pub radius: f32,
     pub diameter: f32,
     pub color: Color,
-    pub weight: f32,
+    pub mass: f32,
     /// number between 1 and 0. (percentage of bounciness).
     pub elasticity_fraction: f32,
-    /// number between 1 and 0. (percentage of loss).
-    pub decay_fraction: f32,
+    /// number in Newton (m * g).
+    pub friction: f32,
     pub animation: Rc<Animate>,
     pub frame: u32,
     pub last_frame: u32,
@@ -35,41 +35,37 @@ pub enum InitFrame {
 }
 
 pub struct ParticleAttributes {
-    pub color: Color,
     /// number between 1 and 0. (percentage of bounciness).
     pub elasticity_fraction: f32,
-    /// number between 1 and 0. (percentage of loss).
-    pub decay_fraction: f32,
-    pub weight: f32,
+    /// number in Newton (m * g).
+    pub friction: f32,
+
+    pub color: Color,
+    pub mass: f32,
     pub diameter: f32,
     pub animation: Rc<Animate>,
     pub last_frame: u32,
     pub init_frame: InitFrame,
 }
 
-// TODO add factory that returns mesh based on particle
 impl Particle {
     pub fn new(x: f32, y: f32, attributes: &ParticleAttributes) -> Self {
-        let mut frame = 0;
-
-        match attributes.init_frame {
-            InitFrame::Zero => (),
-            InitFrame::Random => {
-                frame = rand::gen_range(0, attributes.last_frame);
-            }
-        }
+        let frame = match attributes.init_frame {
+            InitFrame::Zero => 0,
+            InitFrame::Random => rand::gen_range(0, attributes.last_frame),
+        };
 
         Self {
             x,
             y,
             vx: 1.5,
             vy: 1.,
-            decay_fraction: attributes.decay_fraction,
+            friction: attributes.friction,
             color: attributes.color.clone(),
             radius: attributes.diameter / 2.,
             diameter: attributes.diameter,
             elasticity_fraction: attributes.elasticity_fraction,
-            weight: attributes.weight,
+            mass: attributes.mass,
             queue_frame: UINT32_MAX,
             animation: Rc::clone(&attributes.animation),
             last_frame: attributes.last_frame,
@@ -77,58 +73,56 @@ impl Particle {
         }
     }
 
-    fn set_vx_force(&self, transform: &mut Transform, other: &mut Particle) {
-        if self.weight == other.weight {
-            let tmp = transform.vx();
-            transform.set_new_vx(other.vx);
-            other.vx = tmp;
+    pub fn handle_possible_collision(
+        &self,
+        other: &mut Particle,
+        transform: &mut Transform,
+        new_x: f32,
+        new_y: f32,
+        end_self_x: f32,
+        end_self_y: f32,
+    ) {
+        let end_other_x = other.x + other.diameter;
+        let end_other_y = other.y + other.diameter;
+
+        let inside_x = other.x <= new_x && new_x <= end_other_x
+            || other.x <= end_self_x && end_self_x <= end_other_x;
+        let inside_y = other.y <= new_y && new_y <= end_other_y
+            || other.y <= end_self_y && end_self_y <= end_other_y;
+
+        // No collision
+        if !inside_x || !inside_y {
             return;
         }
 
-        let total_weight = self.weight + other.weight;
-        let transform_vx = ((self.weight - other.weight) / total_weight * transform.vx())
-            + (2. * other.weight / total_weight * other.vx);
-        let other_vx = (2. * self.weight / total_weight * transform.vx())
-            + ((other.weight - self.weight) / total_weight * other.vx);
+        if self.mass == other.mass {
+            let tmp = transform.vx;
+            transform.vx = other.vx * self.elasticity_fraction;
+            other.vx = tmp * other.elasticity_fraction;
 
-        let elasticity_fraction = (self.elasticity_fraction + other.elasticity_fraction) / 2.;
-        transform.set_new_vx(transform_vx * elasticity_fraction);
-        other.vx = other_vx * elasticity_fraction;
-    }
-
-    fn set_vy_force(&self, transform: &mut Transform, other: &mut Particle) {
-        if self.weight == other.weight {
-            let tmp = transform.vy();
-            transform.set_new_vy(other.vy);
-            other.vy = tmp;
+            let tmp = transform.vy;
+            transform.vy = other.vy * self.elasticity_fraction;
+            other.vy = tmp * other.elasticity_fraction;
             return;
         }
 
-        let total_weight = self.weight + other.weight;
-        let transform_vy = ((self.weight - other.weight) / total_weight * transform.vy())
-            + (2. * other.weight / total_weight * other.vy);
-        let other_vy = (2. * self.weight / total_weight * transform.vy())
-            + ((other.weight - self.weight) / total_weight * other.vy);
+        let total_weight = self.mass + other.mass;
 
-        let elasticity_fraction = (self.elasticity_fraction + other.elasticity_fraction) / 2.;
-        transform.set_new_vy(transform_vy * elasticity_fraction);
-        other.vx = other_vy * elasticity_fraction;
-    }
+        let transform_vx = ((self.mass - other.mass) / total_weight * transform.vx)
+            + (2. * other.mass / total_weight * other.vx);
+        let other_vx = (2. * self.mass / total_weight * transform.vx)
+            + ((other.mass - self.mass) / total_weight * other.vx);
 
-    pub fn handle_collision(&self, other: &mut Particle, transform: &mut Transform) {
-        let inside_x =
-            other.x <= transform.new_x() && transform.new_x() <= other.x + other.diameter;
-        let inside_y =
-            other.y <= transform.new_y() && transform.new_y() <= other.y + other.diameter;
+        transform.vx = transform_vx * self.elasticity_fraction;
+        other.vx = other_vx * other.elasticity_fraction;
 
-        if inside_x && inside_y {
-            // TODO incorporate weight.
-            self.set_vx_force(transform, other);
-            self.set_vy_force(transform, other);
+        let transform_vy = ((self.mass - other.mass) / total_weight * transform.vy)
+            + (2. * other.mass / total_weight * other.vy);
+        let other_vy = (2. * self.mass / total_weight * transform.vy)
+            + ((other.mass - self.mass) / total_weight * other.vy);
 
-            transform.set_new_vx(transform.vx());
-            transform.set_new_vy(transform.vy());
-        }
+        transform.vy = transform_vy * self.elasticity_fraction;
+        other.vx = other_vy * other.elasticity_fraction;
     }
 
     pub fn update(&mut self, grid_position: &Position, transform: Transform) {
@@ -167,10 +161,10 @@ impl Particle {
     }
 
     fn transform(&mut self, transform: Transform) {
-        self.vx = transform.vx();
-        self.vy = transform.vy();
-        self.x = transform.new_x();
-        self.y = transform.new_y();
+        self.vx = transform.vx;
+        self.vy = transform.vy;
+        self.x += transform.vx;
+        self.y += transform.vy;
     }
 }
 

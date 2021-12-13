@@ -18,7 +18,7 @@ use position::Position;
 #[macroquad::main("BasicShapes")]
 async fn main() {
     let position = Position::new(100., 100.);
-    let mut grid = Grid::new(5, 5, 10, 10, 10, position);
+    let mut grid = Grid::new(10, 10, 10, 10, 10, position);
 
     fn animate(data: &mut AnimationData, frame: u32) {
         //if frame % 50 == 0 {
@@ -33,30 +33,30 @@ async fn main() {
     }
 
     let attributes = ParticleAttributes {
-        color: Color::from_rgba(20, 20, 200, 255),
-        decay_fraction: 0.5,
-        diameter: 5.,
-        elasticity_fraction: 0.95,
-        weight: 1.,
+        color: Color::from_rgba(20, 200, 200, 255),
+        friction: 1.,
+        diameter: 5.5,
+        elasticity_fraction: 0.9,
+        mass: 1.,
         animation: Rc::new(animate),
         last_frame: 100000,
         init_frame: InitFrame::Random,
     };
 
-    grid.fill(&attributes, 20, FillStyle::WhiteNoise);
+    grid.fill(&attributes, 100, FillStyle::WhiteNoise);
 
     let attributes = ParticleAttributes {
-        color: Color::from_rgba(20, 200, 20, 255),
-        decay_fraction: 0.5,
+        color: Color::from_rgba(20, 200, 100, 255),
+        friction: 1.,
         diameter: 6.,
-        elasticity_fraction: 0.95,
-        weight: 2.0,
+        elasticity_fraction: 0.9,
+        mass: 1.2,
         animation: Rc::new(animate),
         last_frame: 100000,
         init_frame: InitFrame::Random,
     };
 
-    grid.fill(&attributes, 20, FillStyle::WhiteNoise);
+    grid.fill(&attributes, 100, FillStyle::WhiteNoise);
 
     loop {
         //clear_background(BLACK);

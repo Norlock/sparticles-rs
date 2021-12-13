@@ -110,20 +110,22 @@ impl Grid {
     }
 
     fn handle_collision(&mut self, particle: &mut Particle, transform: &mut Transform) -> usize {
-        let new_x_spot = self.possibility_x_index(transform.new_x());
-        let new_y_spot = self.possibility_y_index(transform.new_y());
+        let new_x = particle.x + transform.vx;
+        let new_y = particle.y + transform.vy;
+        let end_x = new_x + particle.diameter;
+        let end_y = new_y + particle.diameter;
+
+        let new_x_spot = self.possibility_x_index(new_x);
+        let new_y_spot = self.possibility_y_index(new_y);
 
         let new_vec_index = self.possibility_index(new_x_spot, new_y_spot);
 
-        // todo get more list if element is hovering over multiple spots.
         for other in self.possibility_spots[new_vec_index].iter_mut() {
-            // TODO modify other vx/vy.
-            // Store energy instead of direct velocity.
-            particle.handle_collision(other, transform);
+            particle.handle_possible_collision(other, transform, new_x, new_y, end_x, end_y);
         }
 
-        let end_x_spot = self.possibility_x_index(transform.new_x());
-        let end_y_spot = self.possibility_y_index(transform.new_y());
+        let end_x_spot = self.possibility_x_index(end_x);
+        let end_y_spot = self.possibility_y_index(end_y);
 
         let has_diff_end_x_spot = end_x_spot != new_x_spot;
         let has_diff_end_y_spot = end_y_spot != new_y_spot;
@@ -132,7 +134,7 @@ impl Grid {
             let new_vec_index = self.possibility_index(end_x_spot, new_y_spot);
 
             for other in self.possibility_spots[new_vec_index].iter_mut() {
-                particle.handle_collision(other, transform);
+                particle.handle_possible_collision(other, transform, new_x, new_y, end_x, end_y);
             }
         }
 
@@ -140,7 +142,7 @@ impl Grid {
             let new_vec_index = self.possibility_index(new_x_spot, end_y_spot);
 
             for other in self.possibility_spots[new_vec_index].iter_mut() {
-                particle.handle_collision(other, transform);
+                particle.handle_possible_collision(other, transform, new_x, new_y, end_x, end_y);
             }
         }
 
@@ -148,7 +150,7 @@ impl Grid {
             let new_vec_index = self.possibility_index(end_x_spot, end_y_spot);
 
             for other in self.possibility_spots[new_vec_index].iter_mut() {
-                particle.handle_collision(other, transform);
+                particle.handle_possible_collision(other, transform, new_x, new_y, end_x, end_y);
             }
         }
 
@@ -159,24 +161,23 @@ impl Grid {
      * returns true if index needs to be incremented
      */
     pub fn handle_particle(&mut self, vec_index: usize, spot_index: usize) {
-        if self.possibility_spots[vec_index][spot_index].queue_frame == self.frame {
-            return;
-        }
-
         let mut particle = self.possibility_spots[vec_index].swap_remove(spot_index);
 
         let mut transform = Transform::new(&particle);
 
-        let x_out_of_bounds = transform.new_x() < 0. || self.width <= transform.new_x();
-        let y_out_of_bounds = transform.new_y() < 0. || self.height <= transform.new_y();
+        let new_x = particle.x + transform.vx;
+        let new_y = particle.y + transform.vy;
+
+        let x_out_of_bounds = new_x < 0. || self.width <= new_x;
+        let y_out_of_bounds = new_y < 0. || self.height <= new_y;
         let elasticity_force = -1. * particle.elasticity_fraction;
 
         if x_out_of_bounds {
-            transform.set_new_vx(transform.vx() * elasticity_force);
+            transform.vx *= elasticity_force;
         }
 
         if y_out_of_bounds {
-            transform.set_new_vy(transform.vy() * elasticity_force);
+            transform.vy *= elasticity_force;
         }
 
         let new_vec_index = self.handle_collision(&mut particle, &mut transform);
@@ -202,8 +203,12 @@ impl Grid {
         let start = Instant::now();
 
         for vec_index in 0..self.possibility_spots.len() {
-            for index in (0..self.possibility_spots[vec_index].len()).rev() {
-                self.handle_particle(vec_index, index);
+            for spot_index in (0..self.possibility_spots[vec_index].len()).rev() {
+                if self.possibility_spots[vec_index][spot_index].queue_frame == self.frame {
+                    continue;
+                }
+
+                self.handle_particle(vec_index, spot_index);
             }
         }
 
@@ -306,10 +311,10 @@ fn fill_grid() {
     let mut grid = Grid::new(5, 5, 10, 10, 10, Position::new(1., 2.));
     let attributes = ParticleAttributes {
         color: Color::from_rgba(20, 20, 200, 255),
-        decay_fraction: 0.5,
+        friction: 0.5,
         diameter: 5.,
         elasticity_fraction: 0.9,
-        weight: 1.,
+        mass: 1.,
     };
 
     grid.fill(&attributes, 200, FillStyle::WhiteNoise);
@@ -338,10 +343,10 @@ fn add_particle() {
 
     let attributes = ParticleAttributes {
         color: Color::from_rgba(20, 20, 200, 255),
-        decay_fraction: 0.5,
+        friction: 0.5,
         diameter: 5.,
         elasticity_fraction: 0.9,
-        weight: 1.,
+        mass: 1.,
     };
 
     grid.add_particle(115., 105., &attributes);
@@ -364,9 +369,9 @@ fn add_particle() {
 
     assert_eq!(5., particle.diameter);
     assert_eq!(2.5, particle.radius);
-    assert_eq!(0.5, particle.decay_fraction);
+    assert_eq!(0.5, particle.friction);
     assert_eq!(0.9, particle.elasticity_fraction);
-    assert_eq!(1., particle.weight);
+    assert_eq!(1., particle.mass);
 }
 
 #[test]
@@ -375,10 +380,10 @@ fn moves_particle() {
 
     let attributes = ParticleAttributes {
         color: Color::from_rgba(20, 20, 200, 255),
-        decay_fraction: 0.5,
+        friction: 0.5,
         diameter: 5.,
         elasticity_fraction: 0.9,
-        weight: 1.,
+        mass: 1.,
     };
 
     grid.add_particle(5., 5., &attributes);

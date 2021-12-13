@@ -32,19 +32,7 @@ async fn main() {
         //}
     }
 
-    fn animate2(data: &mut AnimationData, frame: u32) {
-        //if frame % 50 == 0 {
-        //data.color.r = rand::gen_range(0., 1.);
-        //data.color.g = rand::gen_range(0., 1.);
-        //data.color.b = rand::gen_range(0., 1.);
-        //}
-
-        //if frame % 20 == 0 {
-        //data.color.a = (frame as f32 / 50.).sin().abs();
-        //}
-    }
-
-    let mut attributes = ParticleAttributes {
+    let attributes = ParticleAttributes {
         color: Color::from_rgba(20, 20, 200, 255),
         decay_fraction: 0.5,
         diameter: 5.,
@@ -55,9 +43,20 @@ async fn main() {
         init_frame: InitFrame::Random,
     };
 
-    grid.fill(&attributes, 200, FillStyle::WhiteNoise);
+    grid.fill(&attributes, 20, FillStyle::WhiteNoise);
 
-    attributes.animation = Rc::new(animate2);
+    let attributes = ParticleAttributes {
+        color: Color::from_rgba(20, 200, 20, 255),
+        decay_fraction: 0.5,
+        diameter: 6.,
+        elasticity_fraction: 0.95,
+        weight: 2.0,
+        animation: Rc::new(animate),
+        last_frame: 100000,
+        init_frame: InitFrame::Random,
+    };
+
+    grid.fill(&attributes, 20, FillStyle::WhiteNoise);
 
     loop {
         //clear_background(BLACK);

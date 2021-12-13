@@ -47,40 +47,6 @@ pub struct ParticleAttributes {
     pub init_frame: InitFrame,
 }
 
-fn set_vx_force(transform: &mut Transform, other: &mut Particle) {
-    // swap energies
-    let tmp_vx = transform.vx();
-    transform.set_new_vx(other.vx);
-    other.vx = tmp_vx;
-    // TODO swap velocities is only correct if there is no difference in weight.
-    // in future calculate energy
-
-    //if 0. < transform.vx() && 0. < other.vx || transform.vx() < 0. && other.vx < 0. {
-    //let tmp_vx = transform.vx();
-    //transform.set_new_vx(other.vx);
-    //other.vx = tmp_vx;
-    //} else {
-    //transform.set_new_vx(transform.vx() + other.vx);
-    //}
-}
-
-fn set_vy_force(transform: &mut Transform, other: &mut Particle) {
-    // swap energies
-    let tmp_vy = transform.vy();
-    transform.set_new_vy(other.vy);
-    other.vy = tmp_vy;
-    // TODO swap velocities is only correct if there is no difference in weight.
-    // in future calculate energy
-
-    //if 0. < transform.vy() && 0. < other.vy {
-    //transform.set_new_vx(transform.vy().max(other.vy));
-    //} else if transform.vx() < 0. && other.vy < 0. {
-    //transform.set_new_vx(transform.vy().min(other.vy));
-    //} else {
-    //transform.set_new_vx(transform.vy() + other.vy);
-    //}
-}
-
 // TODO add factory that returns mesh based on particle
 impl Particle {
     pub fn new(x: f32, y: f32, attributes: &ParticleAttributes) -> Self {
@@ -111,6 +77,44 @@ impl Particle {
         }
     }
 
+    fn set_vx_force(&self, transform: &mut Transform, other: &mut Particle) {
+        if self.weight == other.weight {
+            let tmp = transform.vx();
+            transform.set_new_vx(other.vx);
+            other.vx = tmp;
+            return;
+        }
+
+        let total_weight = self.weight + other.weight;
+        let transform_vx = ((self.weight - other.weight) / total_weight * transform.vx())
+            + (2. * other.weight / total_weight * other.vx);
+        let other_vx = (2. * self.weight / total_weight * transform.vx())
+            + ((other.weight - self.weight) / total_weight * other.vx);
+
+        let elasticity_fraction = (self.elasticity_fraction + other.elasticity_fraction) / 2.;
+        transform.set_new_vx(transform_vx * elasticity_fraction);
+        other.vx = other_vx * elasticity_fraction;
+    }
+
+    fn set_vy_force(&self, transform: &mut Transform, other: &mut Particle) {
+        if self.weight == other.weight {
+            let tmp = transform.vy();
+            transform.set_new_vy(other.vy);
+            other.vy = tmp;
+            return;
+        }
+
+        let total_weight = self.weight + other.weight;
+        let transform_vy = ((self.weight - other.weight) / total_weight * transform.vy())
+            + (2. * other.weight / total_weight * other.vy);
+        let other_vy = (2. * self.weight / total_weight * transform.vy())
+            + ((other.weight - self.weight) / total_weight * other.vy);
+
+        let elasticity_fraction = (self.elasticity_fraction + other.elasticity_fraction) / 2.;
+        transform.set_new_vy(transform_vy * elasticity_fraction);
+        other.vx = other_vy * elasticity_fraction;
+    }
+
     pub fn handle_collision(&self, other: &mut Particle, transform: &mut Transform) {
         let inside_x =
             other.x <= transform.new_x() && transform.new_x() <= other.x + other.diameter;
@@ -118,13 +122,12 @@ impl Particle {
             other.y <= transform.new_y() && transform.new_y() <= other.y + other.diameter;
 
         if inside_x && inside_y {
-            //let
             // TODO incorporate weight.
-            set_vx_force(transform, other);
-            set_vy_force(transform, other);
+            self.set_vx_force(transform, other);
+            self.set_vy_force(transform, other);
 
-            transform.set_new_vx(transform.vx() * self.elasticity_fraction);
-            transform.set_new_vy(transform.vy() * self.elasticity_fraction);
+            transform.set_new_vx(transform.vx());
+            transform.set_new_vy(transform.vy());
         }
     }
 

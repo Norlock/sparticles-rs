@@ -2,7 +2,6 @@ mod animation;
 mod container;
 mod fill_style;
 mod grid;
-mod mesh;
 mod particle;
 mod position;
 mod transform;
@@ -19,7 +18,7 @@ use position::Position;
 #[macroquad::main("BasicShapes")]
 async fn main() {
     let position = Position::new(100., 100.);
-    let mut grid = Grid::new(5, 5, 5, 5, 20, position);
+    let mut grid = Grid::new(5, 5, 10, 10, 10, position);
 
     fn animate(data: &mut AnimationData, frame: u32) {
         //if frame % 50 == 0 {
@@ -49,14 +48,14 @@ async fn main() {
         color: Color::from_rgba(20, 20, 200, 255),
         decay_fraction: 0.5,
         diameter: 5.,
-        elasticity_fraction: 0.9,
+        elasticity_fraction: 0.95,
         weight: 1.,
         animation: Rc::new(animate),
         last_frame: 100000,
         init_frame: InitFrame::Random,
     };
 
-    grid.fill(&attributes, 100, FillStyle::WhiteNoise);
+    grid.fill(&attributes, 200, FillStyle::WhiteNoise);
 
     attributes.animation = Rc::new(animate2);
 

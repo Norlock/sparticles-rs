@@ -108,6 +108,53 @@ impl Grid {
     fn possibility_index(&self, x_index: usize, y_index: usize) -> usize {
         self.possibility_x_count * y_index + x_index
     }
+
+    fn handle_collision(&mut self, particle: &mut Particle, transform: &mut Transform) -> usize {
+        let new_x_spot = self.possibility_x_index(transform.new_x());
+        let new_y_spot = self.possibility_y_index(transform.new_y());
+
+        let new_vec_index = self.possibility_index(new_x_spot, new_y_spot);
+
+        // todo get more list if element is hovering over multiple spots.
+        for other in self.possibility_spots[new_vec_index].iter_mut() {
+            // TODO modify other vx/vy.
+            // Store energy instead of direct velocity.
+            particle.handle_collision(other, transform);
+        }
+
+        let end_x_spot = self.possibility_x_index(transform.new_x());
+        let end_y_spot = self.possibility_y_index(transform.new_y());
+
+        let has_diff_end_x_spot = end_x_spot != new_x_spot;
+        let has_diff_end_y_spot = end_y_spot != new_y_spot;
+
+        if has_diff_end_x_spot {
+            let new_vec_index = self.possibility_index(end_x_spot, new_y_spot);
+
+            for other in self.possibility_spots[new_vec_index].iter_mut() {
+                particle.handle_collision(other, transform);
+            }
+        }
+
+        if has_diff_end_y_spot {
+            let new_vec_index = self.possibility_index(new_x_spot, end_y_spot);
+
+            for other in self.possibility_spots[new_vec_index].iter_mut() {
+                particle.handle_collision(other, transform);
+            }
+        }
+
+        if has_diff_end_x_spot && has_diff_end_y_spot {
+            let new_vec_index = self.possibility_index(end_x_spot, end_y_spot);
+
+            for other in self.possibility_spots[new_vec_index].iter_mut() {
+                particle.handle_collision(other, transform);
+            }
+        }
+
+        new_vec_index
+    }
+
     /**
      * returns true if index needs to be incremented
      */
@@ -132,17 +179,7 @@ impl Grid {
             transform.set_new_vy(transform.vy() * elasticity_force);
         }
 
-        let new_x_spot = self.possibility_x_index(transform.new_x());
-        let new_y_spot = self.possibility_y_index(transform.new_y());
-
-        let new_vec_index = self.possibility_index(new_x_spot, new_y_spot);
-
-        // todo get more list if element is hovering over multiple spots.
-        for other in self.possibility_spots[new_vec_index].iter_mut() {
-            // TODO modify other vx/vy.
-            // Store energy instead of direct velocity.
-            particle.handle_collision(other, &mut transform);
-        }
+        let new_vec_index = self.handle_collision(&mut particle, &mut transform);
 
         particle.update(&self.position, transform);
 

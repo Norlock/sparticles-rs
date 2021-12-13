@@ -123,9 +123,8 @@ impl Particle {
             set_vx_force(transform, other);
             set_vy_force(transform, other);
 
-            let elasticity_force = 1. * self.elasticity_fraction;
-            transform.set_new_vx(transform.vx() * elasticity_force);
-            transform.set_new_vy(transform.vy() * elasticity_force);
+            transform.set_new_vx(transform.vx() * self.elasticity_fraction);
+            transform.set_new_vy(transform.vy() * self.elasticity_fraction);
         }
     }
 

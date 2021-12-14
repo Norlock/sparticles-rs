@@ -1,6 +1,7 @@
 mod animation;
 mod container;
 mod fill_style;
+mod force;
 mod grid;
 mod particle;
 mod position;
@@ -15,7 +16,7 @@ use macroquad::prelude::*;
 use particle::{InitFrame, ParticleAttributes};
 use position::Position;
 
-#[macroquad::main("BasicShapes")]
+#[macroquad::main("Particles")]
 async fn main() {
     let position = Position::new(100., 100.);
     let mut grid = Grid::new(10, 10, 5, 5, 20, position);
@@ -59,7 +60,7 @@ async fn main() {
     grid.fill(&attributes, 100, FillStyle::WhiteNoise);
 
     loop {
-        //clear_background(BLACK);
+        clear_background(BLACK);
 
         grid.draw_ui();
         grid.draw();

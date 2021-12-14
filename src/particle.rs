@@ -1,15 +1,14 @@
 use crate::animation::Animate;
-use crate::AnimationData;
 use macroquad::miniquad::gl::UINT32_MAX;
 use macroquad::prelude::draw_circle;
 use macroquad::prelude::rand;
 use macroquad::prelude::Color;
-use std::fmt;
 use std::rc::Rc;
 
 use crate::position::Position;
 use crate::transform::Transform;
 
+#[derive(Debug)]
 pub struct Particle {
     pub queue_frame: u32,
     pub x: f32,
@@ -24,7 +23,7 @@ pub struct Particle {
     pub elasticity_fraction: f32,
     /// number in Newton (m * g).
     pub friction: f32,
-    pub animation: Rc<Animate>,
+    //pub animation: Rc<Animate>,
     pub frame: u32,
     pub last_frame: u32,
 }
@@ -67,7 +66,6 @@ impl Particle {
             elasticity_fraction: attributes.elasticity_fraction,
             mass: attributes.mass,
             queue_frame: UINT32_MAX,
-            animation: Rc::clone(&attributes.animation),
             last_frame: attributes.last_frame,
             frame,
         }
@@ -138,23 +136,23 @@ impl Particle {
     }
 
     fn animate(&mut self) {
-        let mut data = AnimationData {
-            color: self.color,
-            diameter: self.diameter,
-        };
+        //let mut data = AnimationData {
+        //color: self.color,
+        //diameter: self.diameter,
+        //};
 
-        let animation = &self.animation;
-        animation(&mut data, self.frame);
+        //let animation = &self.animation;
+        //animation(&mut data, self.frame);
 
-        self.color = data.color;
-        self.diameter = self.diameter;
-        self.radius = self.diameter / 2.;
+        //self.color = data.color;
+        //self.diameter = self.diameter;
+        //self.radius = self.diameter / 2.;
 
-        if self.frame == self.last_frame {
-            self.frame = 0;
-        } else {
-            self.frame += 1;
-        }
+        //if self.frame == self.last_frame {
+        //self.frame = 0;
+        //} else {
+        //self.frame += 1;
+        //}
     }
 
     fn draw(&self, grid_position: &Position) {
@@ -183,14 +181,5 @@ impl Particle {
         } else if max_height <= self.y + self.diameter {
             self.y = max_height - 1. - self.diameter;
         }
-    }
-}
-
-impl fmt::Debug for Particle {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Particle")
-            //.field("max_frame", &self.last_frame)
-            //.field("current_frame", &self.frame)
-            .finish()
     }
 }

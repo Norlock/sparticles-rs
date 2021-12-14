@@ -242,6 +242,26 @@ impl Grid {
             WHITE,
         );
 
+        if is_mouse_button_pressed(MouseButton::Left) {
+            let (raw_x, raw_y) = mouse_position();
+            // x, y on screen is an offset of the the grid position.
+            let x = raw_x - self.position.x;
+            let y = raw_y - self.position.y;
+            let x_index = self.possibility_x_index(x);
+            let y_index = self.possibility_y_index(y);
+            let vec_index = self.possibility_index(x_index, y_index);
+
+            for particle in self.possibility_spots[vec_index].iter() {
+                let inside_x = particle.x <= x && x <= particle.x + particle.diameter;
+                let inside_y = particle.y <= y && y <= particle.y + particle.diameter;
+
+                // No collision
+                if inside_x && inside_y {
+                    println!("{:#?}", particle);
+                }
+            }
+        }
+
         for x_index in 0..self.possibility_x_count * self.cell_x_count {
             for y_index in 0..self.possibility_y_count * self.cell_y_count {
                 let x = self.position.x + (x_index * self.possibility_side_length) as f32;

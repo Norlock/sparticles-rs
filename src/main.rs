@@ -1,11 +1,11 @@
 mod animation;
+mod collision;
 mod container;
 mod fill_style;
 mod force;
 mod grid;
 mod particle;
 mod position;
-mod transform;
 
 use crate::animation::AnimationData;
 use std::rc::Rc;
@@ -37,7 +37,7 @@ async fn main() {
         color: Color::from_rgba(20, 200, 200, 255),
         friction: 1.,
         diameter: 5.5,
-        elasticity_fraction: 1.,
+        elasticity_fraction: 1.00,
         mass: 1.,
         animation: Rc::new(animate),
         last_frame: 100000,
@@ -50,7 +50,7 @@ async fn main() {
         color: Color::from_rgba(20, 200, 100, 255),
         friction: 1.,
         diameter: 6.,
-        elasticity_fraction: 1.,
+        elasticity_fraction: 1.00,
         mass: 1.5,
         animation: Rc::new(animate),
         last_frame: 100000,

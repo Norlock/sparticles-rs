@@ -1,4 +1,5 @@
 use crate::animation::Animate;
+use crate::collision::CollisionData;
 use macroquad::miniquad::gl::UINT32_MAX;
 use macroquad::prelude::draw_circle;
 use macroquad::prelude::rand;
@@ -6,7 +7,6 @@ use macroquad::prelude::Color;
 use std::rc::Rc;
 
 use crate::position::Position;
-use crate::transform::Transform;
 
 #[derive(Debug)]
 pub struct Particle {
@@ -72,66 +72,66 @@ impl Particle {
     }
 
     pub fn handle_possible_collision(
-        &self,
+        &mut self,
         other: &mut Particle,
-        transform: &mut Transform,
-        new_x: f32,
-        new_y: f32,
-        end_self_x: f32,
-        end_self_y: f32,
-    ) {
-        let end_other_x = other.x + other.diameter;
-        let end_other_y = other.y + other.diameter;
+        data: &mut CollisionData,
+    ) -> bool {
+        let CollisionData {
+            new_x,
+            new_y,
+            end_new_x,
+            end_new_y,
+        } = *data;
 
-        let inside_x = other.x <= new_x && new_x <= end_other_x
-            || other.x <= end_self_x && end_self_x <= end_other_x;
-        let inside_y = other.y <= new_y && new_y <= end_other_y
-            || other.y <= end_self_y && end_self_y <= end_other_y;
+        let other_x = other.x + other.vx;
+        let other_y = other.y + other.vy;
+        let end_other_x = other_x + other.diameter;
+        let end_other_y = other_y + other.diameter;
+
+        let inside_x = other_x <= new_x && new_x <= end_other_x
+            || other_x <= end_new_x && end_new_x <= end_other_x;
+        let inside_y = other_y <= new_y && new_y <= end_other_y
+            || other_y <= end_new_y && end_new_y <= end_other_y;
 
         // No collision
         if !inside_x || !inside_y {
-            return;
+            return false;
         }
 
         if self.mass == other.mass {
-            let tmp = transform.vx;
-            transform.vx = other.vx * self.elasticity_fraction;
+            let tmp = self.vx;
+            self.vx = other.vx * self.elasticity_fraction;
             other.vx = tmp * other.elasticity_fraction;
 
-            let tmp = transform.vy;
-            transform.vy = other.vy * self.elasticity_fraction;
+            let tmp = self.vy;
+            self.vy = other.vy * self.elasticity_fraction;
             other.vy = tmp * other.elasticity_fraction;
-            return;
+            return true;
         }
 
         let total_weight = self.mass + other.mass;
 
-        let transform_vx = ((self.mass - other.mass) / total_weight * transform.vx)
+        let transform_vx = ((self.mass - other.mass) / total_weight * self.vx)
             + (2. * other.mass / total_weight * other.vx);
-        let other_vx = (2. * self.mass / total_weight * transform.vx)
+        let other_vx = (2. * self.mass / total_weight * self.vx)
             + ((other.mass - self.mass) / total_weight * other.vx);
 
-        transform.vx = transform_vx * self.elasticity_fraction;
+        self.vx = transform_vx * self.elasticity_fraction;
         other.vx = other_vx * other.elasticity_fraction;
 
-        let transform_vy = ((self.mass - other.mass) / total_weight * transform.vy)
+        let transform_vy = ((self.mass - other.mass) / total_weight * self.vy)
             + (2. * other.mass / total_weight * other.vy);
-        let other_vy = (2. * self.mass / total_weight * transform.vy)
+        let other_vy = (2. * self.mass / total_weight * self.vy)
             + ((other.mass - self.mass) / total_weight * other.vy);
 
-        transform.vy = transform_vy * self.elasticity_fraction;
+        self.vy = transform_vy * self.elasticity_fraction;
         other.vx = other_vy * other.elasticity_fraction;
+        return true;
     }
 
-    pub fn update(
-        &mut self,
-        grid_position: &Position,
-        transform: Transform,
-        max_width: f32,
-        max_height: f32,
-    ) {
+    pub fn update(&mut self, grid_position: &Position, max_width: f32, max_height: f32) {
         self.animate();
-        self.transform(transform, max_width, max_height);
+        self.transform(max_width, max_height);
         self.draw(grid_position);
     }
 
@@ -164,11 +164,9 @@ impl Particle {
         );
     }
 
-    fn transform(&mut self, transform: Transform, max_width: f32, max_height: f32) {
-        self.vx = transform.vx;
-        self.vy = transform.vy;
-        self.x += transform.vx;
-        self.y += transform.vy;
+    fn transform(&mut self, max_width: f32, max_height: f32) {
+        self.x += self.vx;
+        self.y += self.vy;
 
         if self.x < 0. {
             self.x = 0.;

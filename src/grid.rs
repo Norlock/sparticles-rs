@@ -1,3 +1,4 @@
+use crate::collision::CollisionData;
 use std::time::Duration;
 use std::time::Instant;
 
@@ -5,7 +6,6 @@ use crate::{
     fill_style::FillStyle,
     particle::{Particle, ParticleAttributes},
     position::Position,
-    transform::Transform,
 };
 use macroquad::prelude::*;
 
@@ -109,23 +109,46 @@ impl Grid {
         self.possibility_x_count * y_index + x_index
     }
 
-    fn handle_collision(&mut self, particle: &mut Particle, transform: &mut Transform) -> usize {
-        let new_x = particle.x + transform.vx;
-        let new_y = particle.y + transform.vy;
-        let end_x = new_x + particle.diameter;
-        let end_y = new_y + particle.diameter;
+    fn vec_spot_particle(&self, particle: &Particle) -> usize {
+        let new_x_spot = self.possibility_x_index(particle.x);
+        let new_y_spot = self.possibility_y_index(particle.y);
+
+        self.possibility_index(new_x_spot, new_y_spot)
+    }
+
+    fn has_collision(
+        &mut self,
+        particle: &mut Particle,
+        data: &mut CollisionData,
+        vec_index: usize,
+    ) -> bool {
+        for other in self.possibility_spots[vec_index].iter_mut() {
+            if particle.handle_possible_collision(other, data) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    fn handle_collision(&mut self, particle: &mut Particle, data: &mut CollisionData) -> usize {
+        let CollisionData {
+            new_x,
+            new_y,
+            end_new_x,
+            end_new_y,
+        } = *data;
 
         let new_x_spot = self.possibility_x_index(new_x);
         let new_y_spot = self.possibility_y_index(new_y);
 
         let new_vec_index = self.possibility_index(new_x_spot, new_y_spot);
 
-        for other in self.possibility_spots[new_vec_index].iter_mut() {
-            particle.handle_possible_collision(other, transform, new_x, new_y, end_x, end_y);
+        if self.has_collision(particle, data, new_vec_index) {
+            return self.vec_spot_particle(particle);
         }
 
-        let end_x_spot = self.possibility_x_index(end_x);
-        let end_y_spot = self.possibility_y_index(end_y);
+        let end_x_spot = self.possibility_x_index(end_new_x);
+        let end_y_spot = self.possibility_y_index(end_new_y);
 
         let has_diff_end_x_spot = end_x_spot != new_x_spot;
         let has_diff_end_y_spot = end_y_spot != new_y_spot;
@@ -133,32 +156,28 @@ impl Grid {
         if has_diff_end_x_spot {
             let new_vec_index = self.possibility_index(end_x_spot, new_y_spot);
 
-            for other in self.possibility_spots[new_vec_index].iter_mut() {
-                particle.handle_possible_collision(other, transform, new_x, new_y, end_x, end_y);
+            if self.has_collision(particle, data, new_vec_index) {
+                return self.vec_spot_particle(particle);
             }
         }
 
         if has_diff_end_y_spot {
             let new_vec_index = self.possibility_index(new_x_spot, end_y_spot);
 
-            for other in self.possibility_spots[new_vec_index].iter_mut() {
-                particle.handle_possible_collision(other, transform, new_x, new_y, end_x, end_y);
+            if self.has_collision(particle, data, new_vec_index) {
+                return self.vec_spot_particle(particle);
             }
         }
 
         if has_diff_end_x_spot && has_diff_end_y_spot {
             let new_vec_index = self.possibility_index(end_x_spot, end_y_spot);
 
-            for other in self.possibility_spots[new_vec_index].iter_mut() {
-                particle.handle_possible_collision(other, transform, new_x, new_y, end_x, end_y);
+            if self.has_collision(particle, data, new_vec_index) {
+                return self.vec_spot_particle(particle);
             }
         }
 
-        // Collision can have changed original (new) spot.
-        let new_x_spot = self.possibility_x_index(particle.x);
-        let new_y_spot = self.possibility_y_index(particle.y);
-
-        self.possibility_index(new_x_spot, new_y_spot)
+        new_vec_index
     }
 
     /**
@@ -167,10 +186,10 @@ impl Grid {
     pub fn handle_particle(&mut self, vec_index: usize, spot_index: usize) {
         let mut particle = self.possibility_spots[vec_index].swap_remove(spot_index);
 
-        let mut transform = Transform::new(&particle);
-
-        let new_x = particle.x + transform.vx;
-        let new_y = particle.y + transform.vy;
+        let new_x = particle.x + particle.vx;
+        let new_y = particle.y + particle.vy;
+        let end_new_x = new_x + particle.diameter;
+        let end_new_y = new_y + particle.diameter;
 
         let x_out_of_bounds = new_x < 0. || self.width <= new_x + particle.diameter;
         let y_out_of_bounds = new_y < 0. || self.height <= new_y + particle.diameter;
@@ -178,16 +197,23 @@ impl Grid {
         let elasticity_force = -1. * particle.elasticity_fraction;
 
         if x_out_of_bounds {
-            transform.vx *= elasticity_force;
+            particle.vx *= elasticity_force;
         }
 
         if y_out_of_bounds {
-            transform.vy *= elasticity_force;
+            particle.vy *= elasticity_force;
         }
 
-        let new_vec_index = self.handle_collision(&mut particle, &mut transform);
+        let mut data = CollisionData {
+            new_x,
+            new_y,
+            end_new_x,
+            end_new_y,
+        };
 
-        particle.update(&self.position, transform, self.width, self.height);
+        let new_vec_index = self.handle_collision(&mut particle, &mut data);
+
+        particle.update(&self.position, self.width, self.height);
 
         if vec_index != new_vec_index {
             particle.queue_frame = self.frame;
@@ -251,6 +277,7 @@ impl Grid {
             let y_index = self.possibility_y_index(y);
             let vec_index = self.possibility_index(x_index, y_index);
 
+            println!("------------------------------");
             for particle in self.possibility_spots[vec_index].iter() {
                 let inside_x = particle.x <= x && x <= particle.x + particle.diameter;
                 let inside_y = particle.y <= y && y <= particle.y + particle.diameter;

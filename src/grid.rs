@@ -23,7 +23,7 @@ pub struct Grid {
     pub height: f32,
     pub cell_width: usize,
     pub cell_height: usize,
-    pub duration: Duration,
+    pub duration: u128,
     pub particle_count: u32,
 }
 
@@ -70,7 +70,7 @@ impl Grid {
             cell_width,
             cell_height,
             frame: 0,
-            duration: Duration::new(0, 0),
+            duration: 0,
             particle_count: 0,
         }
     }
@@ -191,8 +191,8 @@ impl Grid {
         let end_new_x = new_x + particle.diameter;
         let end_new_y = new_y + particle.diameter;
 
-        let x_out_of_bounds = new_x < 0. || self.width <= new_x + particle.diameter;
-        let y_out_of_bounds = new_y < 0. || self.height <= new_y + particle.diameter;
+        let x_out_of_bounds = new_x < 0. || self.width <= end_new_x;
+        let y_out_of_bounds = new_y < 0. || self.height <= end_new_y;
         // Inverse direction.
         let elasticity_force = -1. * particle.elasticity_fraction;
 
@@ -244,7 +244,7 @@ impl Grid {
         }
 
         if self.frame % 50 == 0 {
-            self.duration = start.elapsed();
+            self.duration = start.elapsed().as_micros();
             //self.debug();
         }
 
@@ -261,7 +261,7 @@ impl Grid {
         );
 
         draw_text(
-            format!("Loop time: {:?}", self.duration).as_str(),
+            format!("Loop time (micro seconds): {}", self.duration).as_str(),
             10.0,
             40.0,
             20.0,
@@ -289,21 +289,21 @@ impl Grid {
             }
         }
 
-        for x_index in 0..self.possibility_x_count * self.cell_x_count {
-            for y_index in 0..self.possibility_y_count * self.cell_y_count {
-                let x = self.position.x + (x_index * self.possibility_side_length) as f32;
-                let y = self.position.y + (y_index * self.possibility_side_length) as f32;
+        //for x_index in 0..self.possibility_x_count * self.cell_x_count {
+        //for y_index in 0..self.possibility_y_count * self.cell_y_count {
+        //let x = self.position.x + (x_index * self.possibility_side_length) as f32;
+        //let y = self.position.y + (y_index * self.possibility_side_length) as f32;
 
-                draw_rectangle_lines(
-                    x,
-                    y,
-                    self.possibility_side_length as f32,
-                    self.possibility_side_length as f32,
-                    0.3,
-                    LIGHTGRAY,
-                );
-            }
-        }
+        //draw_rectangle_lines(
+        //x,
+        //y,
+        //self.possibility_side_length as f32,
+        //self.possibility_side_length as f32,
+        //0.3,
+        //LIGHTGRAY,
+        //);
+        //}
+        //}
     }
 
     fn possibility_taken(&self, x_coord: f32, y_coord: f32) -> bool {

@@ -19,7 +19,7 @@ use position::Position;
 #[macroquad::main("Particles")]
 async fn main() {
     let position = Position::new(100., 100.);
-    let mut grid = Grid::new(10, 10, 5, 5, 20, position);
+    let mut grid = Grid::new(10, 10, 10, 10, 10, position);
 
     fn animate(data: &mut AnimationData, frame: u32) {
         //if frame % 50 == 0 {
@@ -36,8 +36,8 @@ async fn main() {
     let attributes = ParticleAttributes {
         color: Color::from_rgba(20, 200, 200, 255),
         friction: 1.,
-        diameter: 5.5,
-        elasticity_fraction: 1.00,
+        diameter: 5.2,
+        elasticity_fraction: 0.98,
         mass: 1.,
         animation: Rc::new(animate),
         last_frame: 100000,
@@ -50,7 +50,7 @@ async fn main() {
         color: Color::from_rgba(20, 200, 100, 255),
         friction: 1.,
         diameter: 6.,
-        elasticity_fraction: 1.00,
+        elasticity_fraction: 0.98,
         mass: 1.5,
         animation: Rc::new(animate),
         last_frame: 100000,

@@ -71,6 +71,43 @@ impl Particle {
         }
     }
 
+    fn move_if_overlaps(&mut self, other: &mut Particle) {
+        let new_x = self.x + self.vx;
+        let new_y = self.y + self.vy;
+        let end_new_x = new_x + self.diameter;
+        let end_new_y = new_y + self.diameter;
+        let other_new_x = other.x + other.vx;
+        let other_new_y = other.y + other.vy;
+        let end_other_new_x = other_new_x + other.diameter;
+        let end_other_new_y = other_new_y + other.diameter;
+        let x_remainder = new_x - other_new_x;
+        let y_remainder = new_y - other_new_y;
+
+        let collision_self_is_right = 0. < x_remainder && x_remainder < other.diameter;
+        let collision_self_is_left = -self.diameter < x_remainder && x_remainder < 0.;
+        let collision_self_is_bottom = 0. < y_remainder && y_remainder < other.diameter;
+        let collision_self_is_top = -self.diameter < y_remainder && y_remainder < 0.;
+
+        if !(collision_self_is_left
+            || collision_self_is_right && collision_self_is_top
+            || collision_self_is_bottom)
+        {
+            return;
+        }
+
+        if collision_self_is_right {
+            self.x = end_other_new_x;
+        } else if collision_self_is_left {
+            other.x = end_new_x;
+        }
+
+        if collision_self_is_bottom {
+            self.y = end_other_new_y;
+        } else if collision_self_is_top {
+            other.y = end_new_y;
+        }
+    }
+
     pub fn handle_possible_collision(
         &mut self,
         other: &mut Particle,
@@ -83,18 +120,18 @@ impl Particle {
             end_new_y,
         } = *data;
 
-        let other_x = other.x + other.vx;
-        let other_y = other.y + other.vy;
-        let end_other_x = other_x + other.diameter;
-        let end_other_y = other_y + other.diameter;
+        let other_new_x = other.x + other.vx;
+        let other_new_y = other.y + other.vy;
+        let end_other_new_x = other_new_x + other.diameter;
+        let end_other_new_y = other_new_y + other.diameter;
 
-        let inside_x = other_x <= new_x && new_x <= end_other_x
-            || other_x <= end_new_x && end_new_x <= end_other_x;
-        let inside_y = other_y <= new_y && new_y <= end_other_y
-            || other_y <= end_new_y && end_new_y <= end_other_y;
+        let inside_x = other_new_x <= new_x && new_x <= end_other_new_x
+            || other_new_x <= end_new_x && end_new_x <= end_other_new_x;
+        let inside_y = other_new_y <= new_y && new_y <= end_other_new_y
+            || other_new_y <= end_new_y && end_new_y <= end_other_new_y;
 
-        // No collision
         if !inside_x || !inside_y {
+            // No collision
             return false;
         }
 
@@ -106,6 +143,7 @@ impl Particle {
             let tmp = self.vy;
             self.vy = other.vy * self.elasticity_fraction;
             other.vy = tmp * other.elasticity_fraction;
+            self.move_if_overlaps(other);
             return true;
         }
 
@@ -126,6 +164,8 @@ impl Particle {
 
         self.vy = transform_vy * self.elasticity_fraction;
         other.vx = other_vy * other.elasticity_fraction;
+
+        self.move_if_overlaps(other);
         return true;
     }
 

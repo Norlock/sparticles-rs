@@ -88,10 +88,10 @@ impl Particle {
         let collision_self_is_bottom = 0. < y_remainder && y_remainder < other.diameter;
         let collision_self_is_top = -self.diameter < y_remainder && y_remainder < 0.;
 
-        if !(collision_self_is_left
-            || collision_self_is_right && collision_self_is_top
-            || collision_self_is_bottom)
-        {
+        let x_collision = collision_self_is_left || collision_self_is_right;
+        let y_collision = collision_self_is_top || collision_self_is_bottom;
+
+        if !x_collision || !y_collision {
             return;
         }
 

@@ -74,8 +74,6 @@ impl Particle {
     fn move_if_overlaps(&mut self, other: &mut Particle) {
         let new_x = self.x + self.vx;
         let new_y = self.y + self.vy;
-        let end_new_x = new_x + self.diameter;
-        let end_new_y = new_y + self.diameter;
         let other_new_x = other.x + other.vx;
         let other_new_y = other.y + other.vy;
         let end_other_new_x = other_new_x + other.diameter;
@@ -107,29 +105,29 @@ impl Particle {
         if move_back_horizontally {
             if collision_self_placed_right {
                 if 0. <= self.vx {
-                    self.x = end_other_new_x - self.vx + 0.1;
+                    self.x = end_other_new_x - self.vx + 0.01;
                 } else {
-                    self.x = end_other_new_x + self.vx + 0.1;
+                    self.x = end_other_new_x + self.vx + 0.01;
                 }
             } else {
                 if 0. <= other.vx {
-                    other.x = end_new_x - other.vx + 0.1;
+                    self.x = other_new_x - self.diameter - other.vx - 0.01;
                 } else {
-                    other.x = end_new_x + other.vx + 0.1;
+                    self.x = other_new_x - self.diameter + other.vx - 0.01;
                 }
             }
         } else {
             if collision_self_placed_bottom {
                 if 0. <= self.vy {
-                    self.y = end_other_new_y - self.vy + 0.1;
+                    self.y = end_other_new_y - self.vy + 0.01;
                 } else {
-                    self.y = end_other_new_y + self.vy + 0.1;
+                    self.y = end_other_new_y + self.vy + 0.01;
                 }
             } else {
                 if 0. <= other.vy {
-                    other.y = end_new_y - other.vy + 0.1;
+                    self.y = other_new_y - self.diameter - other.vy - 0.01;
                 } else {
-                    other.y = end_new_y + other.vy + 0.1;
+                    self.y = other_new_y - self.diameter + other.vy - 0.01;
                 }
             }
         }

@@ -57,8 +57,8 @@ impl Particle {
         Self {
             x,
             y,
-            vx: 1.5,
-            vy: 1.,
+            vx: 0.,
+            vy: 0.,
             friction: attributes.friction,
             color: attributes.color.clone(),
             radius: attributes.diameter / 2.,

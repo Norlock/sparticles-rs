@@ -1,9 +1,9 @@
-use crate::collision::CollisionData;
-use std::time::Duration;
 use std::time::Instant;
 
 use crate::{
+    collision::CollisionData,
     fill_style::FillStyle,
+    force::{Force, ForceType},
     particle::{Particle, ParticleAttributes},
     position::Position,
 };
@@ -19,12 +19,24 @@ pub struct Grid {
     pub possibility_side_length: usize,
     pub position: Position,
     pub frame: u32,
+    pub last_frame: u32,
     pub width: f32,
     pub height: f32,
     pub cell_width: usize,
     pub cell_height: usize,
     pub duration: u128,
     pub particle_count: u32,
+    pub forces: Vec<Force>,
+}
+
+pub struct GridOptions {
+    pub cell_x_count: usize,
+    pub cell_y_count: usize,
+    pub possibility_x_count: usize,
+    pub possibility_y_count: usize,
+    pub possibility_side_length: usize,
+    pub position: Position,
+    pub forces: Vec<Force>,
 }
 
 fn create_possibility_grid(
@@ -43,19 +55,27 @@ fn create_possibility_grid(
 }
 
 impl Grid {
-    pub fn new(
-        cell_x_count: usize,
-        cell_y_count: usize,
-        possibility_x_count: usize,
-        possibility_y_count: usize,
-        possibility_side_length: usize,
-        position: Position,
-    ) -> Self {
+    pub fn new(options: GridOptions) -> Self {
+        let GridOptions {
+            cell_x_count,
+            cell_y_count,
+            possibility_x_count,
+            possibility_y_count,
+            possibility_side_length,
+            position,
+            forces,
+        } = options;
         let cell_width = possibility_x_count * possibility_side_length;
         let cell_height = possibility_y_count * possibility_side_length;
         let width = (cell_x_count * cell_width) as f32;
         let height = (cell_y_count * cell_height) as f32;
         let possibility_spots = create_possibility_grid(possibility_x_count, possibility_y_count);
+
+        let last_frame: u32 = if forces.is_empty() {
+            100
+        } else {
+            forces.iter().fold(0, |acc, item| acc + item.frames)
+        };
 
         Self {
             cell_x_count,
@@ -72,6 +92,8 @@ impl Grid {
             frame: 0,
             duration: 0,
             particle_count: 0,
+            forces,
+            last_frame,
         }
     }
 
@@ -180,11 +202,35 @@ impl Grid {
         new_vec_index
     }
 
+    fn apply_external_forces(&self, particle: &mut Particle) {
+        fn apply_static(particle: &mut Particle, vx: f32, vy: f32) {
+            particle.vx += vx;
+            particle.vy += vy;
+        }
+
+        let mut sub_frames = 0;
+        for force in self.forces.iter() {
+            let force_frame = self.frame - sub_frames;
+            if force_frame < force.frames {
+                match force.force_type {
+                    ForceType::None => (),
+                    ForceType::Static { vx, vy } => apply_static(particle, vx, vy),
+                    ForceType::Newton { nx, ny } => (),
+                }
+                return;
+            } else {
+                sub_frames += force.frames;
+            }
+        }
+    }
+
     /**
      * returns true if index needs to be incremented
      */
     pub fn handle_particle(&mut self, vec_index: usize, spot_index: usize) {
         let mut particle = self.possibility_spots[vec_index].swap_remove(spot_index);
+
+        self.apply_external_forces(&mut particle);
 
         let new_x = particle.x + particle.vx;
         let new_y = particle.y + particle.vy;
@@ -248,7 +294,11 @@ impl Grid {
             //self.debug();
         }
 
-        self.frame += 1;
+        if self.frame == self.last_frame {
+            self.frame = 0;
+        } else {
+            self.frame += 1;
+        }
     }
 
     pub fn draw_ui(&self) {

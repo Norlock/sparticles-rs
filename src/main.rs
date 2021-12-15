@@ -8,10 +8,12 @@ mod particle;
 mod position;
 
 use crate::animation::AnimationData;
+use crate::grid::GridOptions;
 use std::rc::Rc;
 
 use crate::grid::Grid;
 use fill_style::FillStyle;
+use force::{Force, ForceType};
 use macroquad::prelude::*;
 use particle::{InitFrame, ParticleAttributes};
 use position::Position;
@@ -19,19 +21,35 @@ use position::Position;
 #[macroquad::main("Particles")]
 async fn main() {
     let position = Position::new(100., 100.);
-    let mut grid = Grid::new(10, 10, 10, 10, 10, position);
+    let mut forces: Vec<Force> = Vec::new();
 
-    fn animate(data: &mut AnimationData, frame: u32) {
-        //if frame % 50 == 0 {
-        //data.color.r = rand::gen_range(0., 1.);
-        //data.color.g = rand::gen_range(0., 1.);
-        //data.color.b = rand::gen_range(0., 1.);
-        //}
+    forces.push(Force {
+        frames: 50,
+        force_type: ForceType::Static { vx: 0.02, vy: 0.01 },
+    });
 
-        //if frame % 20 == 0 {
-        //data.color.a = (frame as f32 / 50.).sin().abs();
-        //}
-    }
+    forces.push(Force {
+        frames: 100,
+        force_type: ForceType::None,
+    });
+
+    forces.push(Force {
+        frames: 50,
+        force_type: ForceType::Static {
+            vx: -0.02,
+            vy: -0.015,
+        },
+    });
+
+    let mut grid = Grid::new(GridOptions {
+        cell_x_count: 10,
+        cell_y_count: 10,
+        possibility_x_count: 10,
+        possibility_y_count: 10,
+        possibility_side_length: 10,
+        position,
+        forces,
+    });
 
     let attributes = ParticleAttributes {
         color: Color::from_rgba(20, 200, 200, 255),
@@ -67,4 +85,16 @@ async fn main() {
 
         next_frame().await
     }
+}
+
+fn animate(data: &mut AnimationData, frame: u32) {
+    //if frame % 50 == 0 {
+    //data.color.r = rand::gen_range(0., 1.);
+    //data.color.g = rand::gen_range(0., 1.);
+    //data.color.b = rand::gen_range(0., 1.);
+    //}
+
+    //if frame % 20 == 0 {
+    //data.color.a = (frame as f32 / 50.).sin().abs();
+    //}
 }

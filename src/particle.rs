@@ -80,31 +80,58 @@ impl Particle {
         let other_new_y = other.y + other.vy;
         let end_other_new_x = other_new_x + other.diameter;
         let end_other_new_y = other_new_y + other.diameter;
-        let x_remainder = new_x - other_new_x;
-        let y_remainder = new_y - other_new_y;
 
-        let collision_self_is_right = 0. < x_remainder && x_remainder < other.diameter;
-        let collision_self_is_left = -self.diameter < x_remainder && x_remainder < 0.;
-        let collision_self_is_bottom = 0. < y_remainder && y_remainder < other.diameter;
-        let collision_self_is_top = -self.diameter < y_remainder && y_remainder < 0.;
+        let x_difference = new_x - other_new_x;
+        let y_difference = new_y - other_new_y;
 
-        let x_collision = collision_self_is_left || collision_self_is_right;
-        let y_collision = collision_self_is_top || collision_self_is_bottom;
+        let collision_self_placed_right = 0. < x_difference && x_difference < other.diameter;
+        let collision_self_placed_left = -self.diameter < x_difference && x_difference < 0.;
+        let collision_self_placed_bottom = 0. < y_difference && y_difference < other.diameter;
+        let collision_self_placed_top = -self.diameter < y_difference && y_difference < 0.;
+
+        let x_collision = collision_self_placed_left || collision_self_placed_right;
+        let y_collision = collision_self_placed_top || collision_self_placed_bottom;
 
         if !x_collision || !y_collision {
             return;
         }
 
-        if collision_self_is_right {
-            self.x = end_other_new_x;
-        } else if collision_self_is_left {
-            other.x = end_new_x;
-        }
+        // The higher the difference the lower the overlap is.
+        // In case of overlap, you move back the least overlapping part.
+        // e.g. both particles diameter is 5.
+        // p1,x == 9, p2,x == 5. Remainder == 9 - 5. (4)
+        // p1,y == 8, p2,y == 5. Remainder == 8 - 5. (3)
+        // if x1 moves to the right with 1x its out of bound instead of y1 moving with 2y.
+        let move_back_horizontally = y_difference.abs() < x_difference.abs();
 
-        if collision_self_is_bottom {
-            self.y = end_other_new_y;
-        } else if collision_self_is_top {
-            other.y = end_new_y;
+        if move_back_horizontally {
+            if collision_self_placed_right {
+                if 0. <= self.vx {
+                    self.x = end_other_new_x - self.vx + 0.1;
+                } else {
+                    self.x = end_other_new_x + self.vx + 0.1;
+                }
+            } else {
+                if 0. <= other.vx {
+                    other.x = end_new_x - other.vx + 0.1;
+                } else {
+                    other.x = end_new_x + other.vx + 0.1;
+                }
+            }
+        } else {
+            if collision_self_placed_bottom {
+                if 0. <= self.vy {
+                    self.y = end_other_new_y - self.vy + 0.1;
+                } else {
+                    self.y = end_other_new_y + self.vy + 0.1;
+                }
+            } else {
+                if 0. <= other.vy {
+                    other.y = end_new_y - other.vy + 0.1;
+                } else {
+                    other.y = end_new_y + other.vy + 0.1;
+                }
+            }
         }
     }
 

@@ -44,7 +44,7 @@ async fn main() {
         init_frame: InitFrame::Random,
     };
 
-    grid.fill(&attributes, 100, FillStyle::WhiteNoise);
+    grid.fill(&attributes, 200, FillStyle::WhiteNoise);
 
     let attributes = ParticleAttributes {
         color: Color::from_rgba(20, 200, 100, 255),
@@ -57,7 +57,7 @@ async fn main() {
         init_frame: InitFrame::Random,
     };
 
-    grid.fill(&attributes, 100, FillStyle::WhiteNoise);
+    grid.fill(&attributes, 200, FillStyle::WhiteNoise);
 
     loop {
         clear_background(BLACK);

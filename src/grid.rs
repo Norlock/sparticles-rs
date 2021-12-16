@@ -379,105 +379,120 @@ impl Grid {
     }
 }
 
-//#[test]
-//fn create_grid() {
-//let grid = Grid::new(5, 5, 10, 10, 10, Position::new(1., 2.));
+#[cfg(test)]
+mod test {
+    use crate::particle::*;
+    use crate::FillStyle;
+    use crate::Grid;
+    use crate::GridOptions;
+    use crate::ParticleAttributes;
+    use crate::Position;
+    use macroquad::prelude::Color;
 
-//assert_eq!(grid.cell_width, 100); // 10 * 10
-//assert_eq!(grid.cell_height, 100);
-//assert_eq!(grid.possibility_spots.len(), 100); // 10 * 10
-//assert_eq!(grid.width, 500.);
-//assert_eq!(grid.height, 500.);
-//assert_eq!(grid.position.x, 1.);
-//assert_eq!(grid.position.y, 2.);
-//}
+    fn default_grid() -> Grid {
+        let options = GridOptions {
+            cell_x_count: 5,
+            cell_y_count: 5,
+            possibility_x_count: 10,
+            possibility_y_count: 10,
+            possibility_side_length: 10,
+            position: Position::new(1., 2.),
+            forces: Vec::new(),
+        };
 
-//#[test]
-//fn fill_grid() {
-//let mut grid = Grid::new(5, 5, 10, 10, 10, Position::new(1., 2.));
-//let attributes = ParticleAttributes {
-//color: Color::from_rgba(20, 20, 200, 255),
-//friction: 0.5,
-//diameter: 5.,
-//elasticity_fraction: 0.9,
-//mass: 1.,
-//};
+        Grid::new(options)
+    }
 
-//grid.fill(&attributes, 200, FillStyle::WhiteNoise);
+    fn default_attributes() -> ParticleAttributes {
+        ParticleAttributes {
+            color: Color::from_rgba(20, 20, 200, 255),
+            friction: 0.5,
+            diameter: 5.,
+            elasticity_fraction: 0.9,
+            mass: 1.,
+            init_frame: InitFrame::Zero,
+        }
+    }
 
-//assert_eq!(grid.particle_count, 200);
+    #[test]
+    fn create_grid() {
+        let grid = default_grid();
+        assert_eq!(grid.cell_width, 100); // 10 * 10
+        assert_eq!(grid.cell_height, 100);
+        assert_eq!(grid.possibility_spots.len(), 100); // 10 * 10
+        assert_eq!(grid.width, 500.);
+        assert_eq!(grid.height, 500.);
+        assert_eq!(grid.position.x, 1.);
+        assert_eq!(grid.position.y, 2.);
+    }
 
-//let len = grid
-//.possibility_spots
-//.iter()
-//.fold(0, |acc, x| acc + x.len()) as u32;
+    #[test]
+    fn fill_grid() {
+        let mut grid = default_grid();
+        let attributes = default_attributes();
 
-//assert_eq!(grid.particle_count, len);
-//}
+        grid.fill(&attributes, 200, FillStyle::WhiteNoise);
 
-//#[test]
-//fn updates_frame() {
-//let mut grid = Grid::new(5, 5, 10, 10, 10, Position::new(1., 2.));
-//assert_eq!(0, grid.frame);
-//grid.draw();
-//assert_eq!(1, grid.frame);
-//}
+        assert_eq!(grid.particle_count, 200);
 
-//#[test]
-//fn add_particle() {
-//let mut grid = Grid::new(5, 5, 10, 10, 10, Position::new(1., 2.));
+        let len = grid
+            .possibility_spots
+            .iter()
+            .fold(0, |acc, x| acc + x.len()) as u32;
 
-//let attributes = ParticleAttributes {
-//color: Color::from_rgba(20, 20, 200, 255),
-//friction: 0.5,
-//diameter: 5.,
-//elasticity_fraction: 0.9,
-//mass: 1.,
-//};
+        assert_eq!(grid.particle_count, len);
+    }
 
-//grid.add_particle(115., 105., &attributes);
-//assert_eq!(1, grid.possibility_spots[1].len());
+    #[test]
+    fn updates_frame() {
+        let mut grid = default_grid();
+        assert_eq!(0, grid.frame);
+        grid.draw();
+        assert_eq!(1, grid.frame);
+    }
 
-//// if y is 1 more, then the pos in array is + poss_x_count (10).
-//grid.add_particle(105., 115., &attributes);
-//assert_eq!(1, grid.possibility_spots[10].len());
+    #[test]
+    fn add_particle() {
+        let mut grid = default_grid();
+        let attributes = default_attributes();
 
-//let particle = &grid.possibility_spots[1][0];
+        grid.add_particle(115., 105., &attributes);
+        assert_eq!(1, grid.possibility_spots[1].len());
 
-//assert_eq!(1, grid.possibility_x_index(particle.x));
-//assert_eq!(0, grid.possibility_y_index(particle.y));
+        // if y is 1 more, then the pos in array is + poss_x_count (10).
+        grid.add_particle(105., 115., &attributes);
+        assert_eq!(1, grid.possibility_spots[10].len());
 
-//assert_eq!(1, grid.cell_x_index(particle.x));
-//assert_eq!(1, grid.cell_y_index(particle.y));
+        let particle = &grid.possibility_spots[1][0];
 
-//// colors is a number between 0 - 1, (255 / 255).
-//assert_eq!(1., particle.color.a);
+        assert_eq!(1, grid.possibility_x_index(particle.x));
+        assert_eq!(0, grid.possibility_y_index(particle.y));
 
-//assert_eq!(5., particle.diameter);
-//assert_eq!(2.5, particle.radius);
-//assert_eq!(0.5, particle.friction);
-//assert_eq!(0.9, particle.elasticity_fraction);
-//assert_eq!(1., particle.mass);
-//}
+        assert_eq!(1, grid.cell_x_index(particle.x));
+        assert_eq!(1, grid.cell_y_index(particle.y));
 
-//#[test]
-//fn moves_particle() {
-//let mut grid = Grid::new(5, 5, 10, 10, 10, Position::new(1., 2.));
+        // colors is a number between 0 - 1, (255 / 255).
+        assert_eq!(1., particle.color.a);
 
-//let attributes = ParticleAttributes {
-//color: Color::from_rgba(20, 20, 200, 255),
-//friction: 0.5,
-//diameter: 5.,
-//elasticity_fraction: 0.9,
-//mass: 1.,
-//};
+        assert_eq!(5., particle.diameter);
+        assert_eq!(2.5, particle.radius);
+        assert_eq!(0.5, particle.friction);
+        assert_eq!(0.9, particle.elasticity_fraction);
+        assert_eq!(1., particle.mass);
+    }
 
-//grid.add_particle(5., 5., &attributes);
+    #[macroquad::test]
+    async fn moves_particle() {
+        let mut grid = default_grid();
+        let attributes = default_attributes();
 
-//assert_eq!(1, grid.possibility_spots[0].len());
+        grid.add_particle(5., 5., &attributes);
 
-////grid.possibility_spots[0][0].vx += 1.;
-////grid.draw();
+        assert_eq!(1, grid.possibility_spots[0].len());
 
-////assert_eq!(1, grid.possibility_spots[1].len());
-//}
+        grid.possibility_spots[0][0].vx += 10.;
+        grid.draw();
+
+        assert_eq!(1, grid.possibility_spots[1].len());
+    }
+}

@@ -1,10 +1,8 @@
-use crate::animation::Animate;
 use crate::collision::CollisionData;
 use macroquad::miniquad::gl::UINT32_MAX;
 use macroquad::prelude::draw_circle;
 use macroquad::prelude::rand;
 use macroquad::prelude::Color;
-use std::rc::Rc;
 
 use crate::position::Position;
 
@@ -25,7 +23,6 @@ pub struct Particle {
     pub friction: f32,
     //pub animation: Rc<Animate>,
     pub frame: u32,
-    pub last_frame: u32,
 }
 
 pub enum InitFrame {
@@ -42,8 +39,6 @@ pub struct ParticleAttributes {
     pub color: Color,
     pub mass: f32,
     pub diameter: f32,
-    pub animation: Rc<Animate>,
-    pub last_frame: u32,
     pub init_frame: InitFrame,
 }
 
@@ -51,7 +46,7 @@ impl Particle {
     pub fn new(x: f32, y: f32, attributes: &ParticleAttributes) -> Self {
         let frame = match attributes.init_frame {
             InitFrame::Zero => 0,
-            InitFrame::Random => rand::gen_range(0, attributes.last_frame),
+            InitFrame::Random => rand::gen_range(0, 10),
         };
 
         Self {
@@ -66,7 +61,6 @@ impl Particle {
             elasticity_fraction: attributes.elasticity_fraction,
             mass: attributes.mass,
             queue_frame: UINT32_MAX,
-            last_frame: attributes.last_frame,
             frame,
         }
     }

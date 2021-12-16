@@ -11,7 +11,6 @@ mod position;
 use animation::AnimationData;
 use force_builder::ForceBuilder;
 use grid::{Grid, GridOptions};
-use std::rc::Rc;
 
 use fill_style::FillStyle;
 use force::{Force, ForceType};
@@ -39,8 +38,6 @@ async fn main() {
         diameter: 5.2,
         elasticity_fraction: 0.98,
         mass: 1.,
-        animation: Rc::new(animate),
-        last_frame: 100000,
         init_frame: InitFrame::Random,
     };
 
@@ -52,8 +49,6 @@ async fn main() {
         diameter: 6.5,
         elasticity_fraction: 0.98,
         mass: 1.5,
-        animation: Rc::new(animate),
-        last_frame: 100000,
         init_frame: InitFrame::Random,
     };
 

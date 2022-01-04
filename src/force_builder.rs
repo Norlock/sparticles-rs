@@ -11,13 +11,13 @@ impl ForceBuilder {
 
     pub fn add(&mut self, force_type: ForceType, frames: u32) {
         let previous_last_frame = if let Some(force) = self.forces.last() {
-            force.last_frame
+            force.until_frame
         } else {
             0
         };
 
         self.forces.push(Force {
-            last_frame: previous_last_frame + frames,
+            until_frame: previous_last_frame + frames,
             force_type,
         })
     }

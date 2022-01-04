@@ -71,12 +71,11 @@ impl Grid {
         let height = (cell_y_count * cell_height) as f32;
         let possibility_spots = create_possibility_grid(possibility_x_count, possibility_y_count);
 
-        let last_frame: u32 = if let Some(force) = forces.last() {
-            force.last_frame
+        let until_frame: u32 = if let Some(force) = forces.last() {
+            force.until_frame
         } else {
             u32::MAX
         };
-        println!("{}", last_frame);
 
         Self {
             cell_x_count,
@@ -93,7 +92,7 @@ impl Grid {
             frame: 0,
             duration: 0,
             particle_count: 0,
-            last_frame,
+            last_frame: until_frame,
             forces,
         }
     }
@@ -205,7 +204,7 @@ impl Grid {
 
     fn apply_force(&self, particle: &mut Particle) {
         for force in self.forces.iter() {
-            if self.frame <= force.last_frame {
+            if self.frame < force.until_frame {
                 return force.apply(particle);
             }
         }
@@ -270,7 +269,7 @@ impl Grid {
             for spot_index in (0..self.possibility_spots[vec_index].len()).rev() {
                 let mut particle = &mut self.possibility_spots[vec_index][spot_index];
                 if particle.queue_frame == self.frame {
-                    particle.queue_frame = u32::MAX;
+                    particle.queue_frame = u32::MAX; // remove queue frame.
                     continue;
                 }
 
@@ -327,21 +326,25 @@ impl Grid {
             }
         }
 
-        //for x_index in 0..self.possibility_x_count * self.cell_x_count {
-        //for y_index in 0..self.possibility_y_count * self.cell_y_count {
-        //let x = self.position.x + (x_index * self.possibility_side_length) as f32;
-        //let y = self.position.y + (y_index * self.possibility_side_length) as f32;
+        fn draw_grid(grid: &Grid) {
+            for x_index in 0..grid.possibility_x_count * grid.cell_x_count {
+                for y_index in 0..grid.possibility_y_count * grid.cell_y_count {
+                    let x = grid.position.x + (x_index * grid.possibility_side_length) as f32;
+                    let y = grid.position.y + (y_index * grid.possibility_side_length) as f32;
 
-        //draw_rectangle_lines(
-        //x,
-        //y,
-        //self.possibility_side_length as f32,
-        //self.possibility_side_length as f32,
-        //0.3,
-        //LIGHTGRAY,
-        //);
-        //}
-        //}
+                    draw_rectangle_lines(
+                        x,
+                        y,
+                        grid.possibility_side_length as f32,
+                        grid.possibility_side_length as f32,
+                        0.3,
+                        LIGHTGRAY,
+                    );
+                }
+            }
+        }
+
+        //draw_grid(&self);
     }
 
     fn possibility_taken(&self, x_coord: f32, y_coord: f32) -> bool {
@@ -381,8 +384,11 @@ impl Grid {
 
 #[cfg(test)]
 mod test {
+    use crate::force::Force;
     use crate::particle::*;
     use crate::FillStyle;
+    use crate::ForceBuilder;
+    use crate::ForceType;
     use crate::Grid;
     use crate::GridOptions;
     use crate::ParticleAttributes;
@@ -412,6 +418,40 @@ mod test {
             mass: 1.,
             init_frame: InitFrame::Zero,
         }
+    }
+
+    fn default_forces() -> Vec<Force> {
+        let mut builder = ForceBuilder::new();
+
+        builder.add(
+            ForceType::Static {
+                vx: 0.02,
+                vy: 0.015,
+            },
+            50,
+        );
+
+        builder.add(ForceType::None, 100);
+
+        builder.add(
+            ForceType::Newton {
+                nx: -0.02,
+                ny: -0.01,
+            },
+            50,
+        );
+
+        builder.add(
+            ForceType::Accelerate {
+                vx: -0.1,
+                vy: -0.01,
+                vx_max: -0.5,
+                vy_max: -1.5,
+            },
+            30,
+        );
+
+        builder.build()
     }
 
     #[test]
@@ -494,5 +534,33 @@ mod test {
         grid.draw();
 
         assert_eq!(1, grid.possibility_spots[1].len());
+        assert_eq!(0, grid.possibility_spots[0].len());
+    }
+
+    #[test]
+    fn add_external_forces() {
+        let forces = default_forces();
+
+        assert_eq!(forces.len(), 4);
+        assert_eq!(forces.last().unwrap().until_frame, 230);
+    }
+
+    #[test]
+    fn apply_forces() {
+        // TODO
+        let attributes = default_attributes();
+        let forces = default_forces();
+
+        let options = GridOptions {
+            cell_x_count: 5,
+            cell_y_count: 5,
+            possibility_x_count: 10,
+            possibility_y_count: 10,
+            possibility_side_length: 10,
+            position: Position::new(1., 2.),
+            forces,
+        };
+
+        let mut grid = Grid::new(options);
     }
 }

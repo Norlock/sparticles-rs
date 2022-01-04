@@ -1,3 +1,7 @@
+use std::rc::Rc;
+
+use crate::animation::{Animate, Animation, AnimationData};
+use crate::animator::Animator;
 use crate::collision::CollisionData;
 use macroquad::miniquad::gl::UINT32_MAX;
 use macroquad::prelude::draw_circle;
@@ -21,7 +25,7 @@ pub struct Particle {
     pub elasticity_fraction: f32,
     /// number in Newton (m * g).
     pub friction: f32,
-    //pub animation: Rc<Animate>,
+    pub animator: Rc<Animator>,
     pub frame: u32,
 }
 
@@ -39,17 +43,20 @@ pub struct ParticleAttributes {
     pub color: Color,
     pub mass: f32,
     pub diameter: f32,
+    pub animator: Rc<Animator>,
     pub init_frame: InitFrame,
 }
 
 impl Particle {
     pub fn new(x: f32, y: f32, attributes: &ParticleAttributes) -> Self {
-        let frame = match attributes.init_frame {
+        let animator = &attributes.animator;
+
+        let init_frame = match attributes.init_frame {
             InitFrame::Zero => 0,
-            InitFrame::Random => rand::gen_range(0, 10),
+            InitFrame::Random => rand::gen_range(0, animator.until_frame),
         };
 
-        Self {
+        let mut particle = Self {
             x,
             y,
             vx: 0.,
@@ -61,8 +68,15 @@ impl Particle {
             elasticity_fraction: attributes.elasticity_fraction,
             mass: attributes.mass,
             queue_frame: UINT32_MAX,
-            frame,
+            animator: animator.clone(),
+            frame: 0,
+        };
+
+        for _n in 0..=init_frame {
+            particle.animate();
         }
+
+        particle
     }
 
     fn move_if_overlaps(&mut self, other: &mut Particle) {
@@ -195,23 +209,39 @@ impl Particle {
     }
 
     fn animate(&mut self) {
-        //let mut data = AnimationData {
-        //color: self.color,
-        //diameter: self.diameter,
-        //};
+        let mut data = AnimationData {
+            color: self.color,
+            diameter: self.diameter,
+            vx: self.vx,
+            vy: self.vy,
+        };
 
-        //let animation = &self.animation;
-        //animation(&mut data, self.frame);
+        for animation in self.animator.animations.iter() {
+            match animation {
+                Animation::Allways(animate) => animate(&mut data),
+                Animation::TimeBased {
+                    animate,
+                    start,
+                    until,
+                } => {
+                    if *start <= self.frame && self.frame < *until {
+                        animate(&mut data);
+                    }
+                }
+            }
 
-        //self.color = data.color;
-        //self.diameter = self.diameter;
-        //self.radius = self.diameter / 2.;
+            self.color = data.color;
+            self.diameter = data.diameter;
+            self.radius = data.diameter / 2.;
+            self.vx = data.vx;
+            self.vy = data.vy;
+        }
 
-        //if self.frame == self.last_frame {
-        //self.frame = 0;
-        //} else {
-        //self.frame += 1;
-        //}
+        if self.frame + 1 < self.animator.until_frame {
+            self.frame += 1;
+        } else {
+            self.frame = 0;
+        }
     }
 
     fn draw(&self, grid_position: &Position) {
@@ -230,13 +260,13 @@ impl Particle {
         if self.x < 0. {
             self.x = 0.;
         } else if max_width <= self.x + self.diameter {
-            self.x = max_width - 1. - self.diameter;
+            self.x = max_width - 0.1 - self.diameter;
         }
 
         if self.y < 0. {
             self.y = 0.;
         } else if max_height <= self.y + self.diameter {
-            self.y = max_height - 1. - self.diameter;
+            self.y = max_height - 0.1 - self.diameter;
         }
     }
 }

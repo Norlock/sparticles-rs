@@ -1,4 +1,5 @@
 mod animation;
+mod animator;
 mod collision;
 mod container;
 mod fill_style;
@@ -6,7 +7,10 @@ mod force;
 mod force_builder;
 mod grid;
 mod particle;
+mod pattern;
 mod position;
+
+use std::rc::Rc;
 
 use animation::AnimationData;
 use force_builder::ForceBuilder;
@@ -16,6 +20,7 @@ use fill_style::FillStyle;
 use force::{Force, ForceType};
 use macroquad::prelude::*;
 use particle::{InitFrame, ParticleAttributes};
+use pattern::{shimmer, shimmer_forces};
 use position::Position;
 
 #[macroquad::main("Particles")]
@@ -23,36 +28,52 @@ async fn main() {
     let position = Position::new(100., 100.);
 
     let mut grid = Grid::new(GridOptions {
-        cell_x_count: 10,
-        cell_y_count: 10,
+        cell_x_count: 5,
+        cell_y_count: 5,
         possibility_x_count: 10,
         possibility_y_count: 10,
         possibility_side_length: 10,
         position,
-        forces: forces(),
+        forces: shimmer_forces(),
     });
 
-    let attributes = ParticleAttributes {
-        color: Color::from_rgba(20, 200, 200, 255),
-        friction: 1.,
-        diameter: 5.2,
-        elasticity_fraction: 0.98,
-        mass: 1.,
-        init_frame: InitFrame::Random,
-    };
+    //let attributes = ParticleAttributes {
+    //color: Color::from_rgba(20, 200, 200, 255),
+    //friction: 1.,
+    //diameter: 5.2,
+    //elasticity_fraction: 0.98,
+    //mass: 1.,
+    //init_frame: InitFrame::Random,
+    //animations: Vec::new(),
+    //last_frame: 100,
+    //};
 
-    grid.fill(&attributes, 200, FillStyle::WhiteNoise);
+    //grid.fill(&attributes, 200, FillStyle::WhiteNoise);
 
     let attributes = ParticleAttributes {
-        color: Color::from_rgba(20, 200, 100, 255),
+        color: Color::from_rgba(255, 255, 0, 255),
         friction: 1.,
-        diameter: 6.5,
-        elasticity_fraction: 0.98,
+        diameter: 5.,
+        elasticity_fraction: 0.3,
         mass: 1.5,
         init_frame: InitFrame::Random,
+        animator: Rc::new(shimmer()),
     };
 
-    grid.fill(&attributes, 200, FillStyle::WhiteNoise);
+    grid.fill(&attributes, 20, FillStyle::WhiteNoise);
+
+    //let attributes = ParticleAttributes {
+    //color: Color::from_rgba(200, 20, 20, 255),
+    //friction: 1.,
+    //diameter: 8.5,
+    //elasticity_fraction: 0.98,
+    //mass: 2.5,
+    //init_frame: InitFrame::Random,
+    //animations: Vec::new(),
+    //last_frame: 100,
+    //};
+
+    //grid.fill(&attributes, 20, FillStyle::WhiteNoise);
 
     loop {
         clear_background(BLACK);
@@ -95,17 +116,13 @@ fn forces() -> Vec<Force> {
         30,
     );
 
+    builder.add(
+        ForceType::Newton {
+            nx: -0.022,
+            ny: 0.015,
+        },
+        30,
+    );
+
     builder.build()
-}
-
-fn animate(data: &mut AnimationData, frame: u32) {
-    //if frame % 50 == 0 {
-    //data.color.r = rand::gen_range(0., 1.);
-    //data.color.g = rand::gen_range(0., 1.);
-    //data.color.b = rand::gen_range(0., 1.);
-    //}
-
-    //if frame % 20 == 0 {
-    //data.color.a = (frame as f32 / 50.).sin().abs();
-    //}
 }

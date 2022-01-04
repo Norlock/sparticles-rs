@@ -1,23 +1,27 @@
 use macroquad::prelude::Color;
+use std::fmt;
 
-pub type Animate = fn(data: &mut AnimationData, frame: u32);
+pub type Animate = fn(data: &mut AnimationData);
 
 pub struct AnimationData {
     pub color: Color,
     pub diameter: f32,
+    pub vx: f32,
+    pub vy: f32,
 }
 
-// Animation design
-struct Animation {
-    pub last_frame: u32,
-    pub animate: Animate,
+#[derive(Clone)]
+pub enum Animation {
+    TimeBased {
+        start: u32,
+        until: u32,
+        animate: Animate,
+    },
+    Allways(Animate),
 }
 
-impl Animation {
-    pub fn new(last_frame: u32, animate: Animate) -> Self {
-        Self {
-            animate,
-            last_frame,
-        }
+impl fmt::Debug for Animation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Animation").finish()
     }
 }

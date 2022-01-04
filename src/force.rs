@@ -1,6 +1,4 @@
-use crate::particle::{self, Particle};
-
-//pub type ApplyForce = fn(data: &mut AnimationData, frame: u32);
+use crate::particle::Particle;
 
 #[derive(Debug)]
 pub enum ForceType {
@@ -23,7 +21,7 @@ pub enum ForceType {
 
 #[derive(Debug)]
 pub struct Force {
-    pub last_frame: u32,
+    pub until_frame: u32,
     pub force_type: ForceType,
 }
 

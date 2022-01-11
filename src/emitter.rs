@@ -7,7 +7,7 @@ pub struct EmitterOptions {
     pub emitter_position: Position,
     pub emitter_diameter: f32,
     pub emitter_lifetime: Duration,
-    pub angle: f32,
+    pub angle_degrees: f32,
     pub diffusion: u32,
     pub particle_color: Color,
     pub particles_per_frame: u32,
@@ -18,11 +18,13 @@ pub struct EmitterOptions {
 
 #[derive(Debug)]
 pub struct Emitter {
-    grid_position: Position,
     emitter_diameter: f32,
-    emitter_position: Position,
+    start_x: f32,
+    start_y: f32,
+    end_x: f32,
+    end_y: f32,
     emitter_lifetime: Duration,
-    angle: f32,
+    angle_radians: f32,
     diffusion: u32,
     particle_color: Color,
     particles_per_frame: u32,
@@ -45,18 +47,26 @@ struct EmittedParticle {
 
 impl Emitter {
     pub fn new(grid_position: &Position, options: EmitterOptions) -> Self {
+        let angle_radians = options.angle_degrees.to_radians();
+        let start_x = options.emitter_position.x + grid_position.x;
+        let start_y = options.emitter_position.y + grid_position.y;
+        let end_x = start_x + options.emitter_diameter * angle_radians.cos();
+        let end_y = start_y + options.emitter_diameter * angle_radians.sin();
+
         Self {
             particles_per_frame: options.particles_per_frame,
             particles: Vec::new(),
-            grid_position: grid_position.clone(),
             particle_color: options.particle_color,
             diffusion: options.diffusion,
             particle_speed: options.particle_speed,
             particle_radius: options.particle_radius,
-            emitter_position: options.emitter_position,
+            start_x,
+            start_y,
+            end_x,
+            end_y,
             particle_lifetime: options.particle_lifetime,
             emitter_diameter: options.emitter_diameter,
-            angle: options.angle,
+            angle_radians: options.angle_degrees,
             emitter_lifetime: options.emitter_lifetime,
             instant: Instant::now(),
         }
@@ -71,12 +81,7 @@ impl Emitter {
             .retain(|particle| particle.lifetime.elapsed() <= self.particle_lifetime);
 
         for particle in self.particles.iter_mut() {
-            draw_circle(
-                particle.x + self.grid_position.x,
-                particle.y + self.grid_position.y,
-                particle.radius,
-                self.particle_color,
-            );
+            draw_circle(particle.x, particle.y, particle.radius, self.particle_color);
 
             particle.x += particle.vx;
             particle.y += particle.vy;
@@ -84,22 +89,18 @@ impl Emitter {
     }
 
     fn create_particle(&self) -> EmittedParticle {
-        // line is
-        let start_x = self.emitter_position.x;
-        let start_y = self.emitter_position.y;
+        let x = rand::gen_range(self.start_x, self.end_x);
+        let y = rand::gen_range(self.start_y, self.end_y);
 
-        let end_x = start_x + self.emitter_diameter * self.angle.cos();
-        let end_y = start_y + self.emitter_diameter * self.angle.sin();
-
-        let x = rand::gen_range(start_x, end_x);
-        let y = rand::gen_range(start_y, end_y);
+        let vx = self.particle_speed * self.angle_radians.cos();
+        let vy = self.particle_speed * self.angle_radians.sin();
 
         EmittedParticle {
             x,
             y,
             lifetime: Instant::now(),
-            vx: 1.,
-            vy: 1.,
+            vx,
+            vy,
             radius: self.particle_radius,
         }
     }

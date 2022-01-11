@@ -1,3 +1,4 @@
+use std::f32::consts::PI;
 use std::time::Duration;
 
 use crate::animation::AnimationData;
@@ -31,13 +32,13 @@ pub fn smoke() -> EmitterOptions {
         emitter_position: Position::new(100., 100.),
         emitter_diameter: 100.,
         emitter_lifetime: Duration::from_secs(10),
-        angle: 90.,
+        angle_degrees: 45.,
         diffusion: 1,
         particle_color: Color::from_rgba(200, 1, 1, 255),
         particles_per_frame: 30,
         particle_lifetime: Duration::from_secs(2),
         particle_radius: 5.,
-        particle_speed: 5.,
+        particle_speed: 1.,
     }
 }
 

@@ -1,7 +1,8 @@
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use crate::{
     collision::CollisionData,
+    emitter::{Emitter, EmitterOptions},
     fill_style::FillStyle,
     force::Force,
     particle::{Particle, ParticleAttributes},
@@ -18,8 +19,9 @@ pub struct Grid {
     pub possibility_y_count: usize,
     pub possibility_side_length: usize,
     pub position: Position,
-    pub frame: u32,
-    pub last_frame: u32,
+    pub frame: u32, // increments until until_frame. (used for forces).
+    pub until_frame: u32,
+    pub raw_frame_counter: u32, // Always increments (can be used for animations).
     pub width: f32,
     pub height: f32,
     pub cell_width: usize,
@@ -27,6 +29,7 @@ pub struct Grid {
     pub duration: u128,
     pub particle_count: u32,
     pub forces: Vec<Force>,
+    pub emitters: Vec<Emitter>,
 }
 
 pub struct GridOptions {
@@ -90,10 +93,12 @@ impl Grid {
             cell_width,
             cell_height,
             frame: 0,
+            raw_frame_counter: 0,
             duration: 0,
             particle_count: 0,
-            last_frame: until_frame,
+            until_frame,
             forces,
+            emitters: Vec::new(),
         }
     }
 
@@ -236,6 +241,8 @@ impl Grid {
             particle.vy *= elasticity_force;
         }
 
+        particle.animate(self.raw_frame_counter);
+
         let mut data = CollisionData {
             new_x,
             new_y,
@@ -245,7 +252,8 @@ impl Grid {
 
         let new_vec_index = self.handle_collision(&mut particle, &mut data);
 
-        particle.update(&self.position, self.width, self.height);
+        particle.transform(self.width, self.height);
+        particle.draw(&self.position);
 
         if vec_index != new_vec_index {
             particle.queue_frame = self.frame;
@@ -260,6 +268,11 @@ impl Grid {
         match fill_style {
             FillStyle::WhiteNoise => self.fill_white_noise(attributes, count),
         }
+    }
+
+    pub fn add_emitter(&mut self, options: EmitterOptions) {
+        let emitter = Emitter::new(&self.position, options);
+        self.emitters.push(emitter);
     }
 
     pub fn draw(&mut self) {
@@ -277,14 +290,24 @@ impl Grid {
             }
         }
 
+        for emitter in self.emitters.iter_mut() {
+            emitter.emit();
+        }
+
         if self.frame % 50 == 0 {
             self.duration = start.elapsed().as_micros();
         }
 
-        if self.frame == self.last_frame {
-            self.frame = 0;
-        } else {
+        if self.frame + 1 < self.until_frame {
             self.frame += 1;
+        } else {
+            self.frame = 0;
+        }
+
+        if self.raw_frame_counter < u32::MAX {
+            self.raw_frame_counter += 1;
+        } else {
+            self.raw_frame_counter = 0;
         }
     }
 

@@ -8,6 +8,7 @@ pub struct AnimationData {
     pub diameter: f32,
     pub vx: f32,
     pub vy: f32,
+    pub raw_frame_counter: u32,
 }
 
 #[derive(Clone)]

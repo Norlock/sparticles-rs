@@ -2,6 +2,7 @@ mod animation;
 mod animator;
 mod collision;
 mod container;
+mod emitter;
 mod fill_style;
 mod force;
 mod force_builder;
@@ -13,6 +14,7 @@ mod position;
 use std::rc::Rc;
 
 use animation::AnimationData;
+use animator::Animator;
 use force_builder::ForceBuilder;
 use grid::{Grid, GridOptions};
 
@@ -20,7 +22,7 @@ use fill_style::FillStyle;
 use force::{Force, ForceType};
 use macroquad::prelude::*;
 use particle::{InitFrame, ParticleAttributes};
-use pattern::{shimmer, shimmer_forces};
+use pattern::{shimmer, shimmer_forces, smoke};
 use position::Position;
 
 #[macroquad::main("Particles")]
@@ -37,30 +39,30 @@ async fn main() {
         forces: shimmer_forces(),
     });
 
-    //let attributes = ParticleAttributes {
-    //color: Color::from_rgba(20, 200, 200, 255),
-    //friction: 1.,
-    //diameter: 5.2,
-    //elasticity_fraction: 0.98,
-    //mass: 1.,
-    //init_frame: InitFrame::Random,
-    //animations: Vec::new(),
-    //last_frame: 100,
-    //};
+    let attributes = ParticleAttributes {
+        color: Color::from_rgba(20, 200, 200, 255),
+        friction: 1.,
+        diameter: 5.2,
+        elasticity_fraction: 0.98,
+        mass: 1.,
+        init_frame: InitFrame::Random,
+        animator: Rc::new(Animator::new(100)),
+    };
 
-    //grid.fill(&attributes, 200, FillStyle::WhiteNoise);
+    grid.fill(&attributes, 200, FillStyle::WhiteNoise);
 
     let attributes = ParticleAttributes {
         color: Color::from_rgba(255, 255, 0, 255),
         friction: 1.,
         diameter: 5.,
-        elasticity_fraction: 0.3,
+        elasticity_fraction: 0.1,
         mass: 1.5,
         init_frame: InitFrame::Random,
         animator: Rc::new(shimmer()),
     };
 
     grid.fill(&attributes, 20, FillStyle::WhiteNoise);
+    grid.add_emitter(smoke());
 
     //let attributes = ParticleAttributes {
     //color: Color::from_rgba(200, 20, 20, 255),

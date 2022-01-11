@@ -72,8 +72,8 @@ impl Particle {
             frame: 0,
         };
 
-        for _n in 0..=init_frame {
-            particle.animate();
+        for _ in 0..init_frame {
+            particle.animate(0);
         }
 
         particle
@@ -202,18 +202,13 @@ impl Particle {
         return true;
     }
 
-    pub fn update(&mut self, grid_position: &Position, max_width: f32, max_height: f32) {
-        self.animate();
-        self.transform(max_width, max_height);
-        self.draw(grid_position);
-    }
-
-    fn animate(&mut self) {
+    pub fn animate(&mut self, raw_frame_counter: u32) {
         let mut data = AnimationData {
             color: self.color,
             diameter: self.diameter,
             vx: self.vx,
             vy: self.vy,
+            raw_frame_counter,
         };
 
         for animation in self.animator.animations.iter() {
@@ -244,7 +239,7 @@ impl Particle {
         }
     }
 
-    fn draw(&self, grid_position: &Position) {
+    pub fn draw(&self, grid_position: &Position) {
         draw_circle(
             self.x + grid_position.x,
             self.y + grid_position.y,
@@ -253,7 +248,7 @@ impl Particle {
         );
     }
 
-    fn transform(&mut self, max_width: f32, max_height: f32) {
+    pub fn transform(&mut self, max_width: f32, max_height: f32) {
         self.x += self.vx;
         self.y += self.vy;
 

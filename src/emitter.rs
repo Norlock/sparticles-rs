@@ -9,8 +9,10 @@ pub struct EmitterOptions {
     pub emitter_duration: Duration,
     pub angle_degrees: f32,
     pub diffusion_degrees: f32,
+    pub emission_distortion_px: f32,
     pub particle_color: Color,
-    pub particles_per_frame: u32,
+    pub particles_per_emission: u32,
+    pub frames_per_emission: u8,
     pub particle_lifetime: Duration,
     pub particle_radius: f32,
     pub particle_speed: f32,
@@ -19,20 +21,23 @@ pub struct EmitterOptions {
 #[derive(Debug)]
 pub struct Emitter {
     emitter_diameter: f32,
-    start_x: f32,
-    start_y: f32,
-    end_x: f32,
-    end_y: f32,
+    x: f32,
+    y: f32,
     angle_radians: f32,
+    angle_emission_radians: f32,
     diffusion_degrees: f32,
     particle_color: Color,
-    particles_per_frame: u32,
+    particles_per_emission: u32,
+    frames_per_emission: u8,
+    emission_distortion: f32,
+    current_frame: u8,
     particle_lifetime: Duration,
     particle_radius: f32,
     particle_speed: f32,
     particles: Vec<EmittedParticle>,
-    pub lifetime: Instant,
-    pub emitter_duration: Duration,
+    lifetime: Instant,
+    emitter_duration: Duration,
+    pub delete: bool,
 }
 
 #[derive(Debug)]
@@ -48,55 +53,71 @@ struct EmittedParticle {
 impl Emitter {
     pub fn new(grid_position: &Position, options: EmitterOptions) -> Self {
         let angle_radians = options.angle_degrees.to_radians();
-        let start_x = options.emitter_position.x + grid_position.x;
-        let start_y = options.emitter_position.y + grid_position.y;
-        let end_x = start_x + options.emitter_diameter * angle_radians.cos();
-        let end_y = start_y + options.emitter_diameter * angle_radians.sin();
+        let inverse_radians = (-90. as f32).to_radians(); // 0 deg will be emitting above
+        let angle_emission_radians = angle_radians + inverse_radians;
+        let x = options.emitter_position.x + grid_position.x;
+        let y = options.emitter_position.y + grid_position.y;
 
         Self {
-            particles_per_frame: options.particles_per_frame,
+            particles_per_emission: options.particles_per_emission,
             particles: Vec::new(),
             particle_color: options.particle_color,
             diffusion_degrees: options.diffusion_degrees,
             particle_speed: options.particle_speed,
             particle_radius: options.particle_radius,
-            start_x,
-            start_y,
-            end_x,
-            end_y,
+            x,
+            y,
+            angle_radians,
+            angle_emission_radians,
+            emission_distortion: options.emission_distortion_px,
             particle_lifetime: options.particle_lifetime,
             emitter_diameter: options.emitter_diameter,
-            angle_radians: options.angle_degrees,
             emitter_duration: options.emitter_duration,
             lifetime: Instant::now(),
+            current_frame: 1,
+            frames_per_emission: options.frames_per_emission,
+            delete: false,
         }
     }
 
     pub fn emit(&mut self) {
-        for _ in 0..self.particles_per_frame {
-            self.particles.push(self.create_particle());
+        let time_elapsed = self.lifetime.elapsed() > self.emitter_duration;
+        if !time_elapsed && self.current_frame == self.frames_per_emission {
+            for _ in 0..self.particles_per_emission {
+                self.particles.push(self.create_particle());
+            }
+            self.current_frame = 1;
+        } else {
+            self.current_frame += 1;
         }
 
-        self.particles
-            .retain(|particle| particle.lifetime.elapsed() <= self.particle_lifetime);
-
-        for particle in self.particles.iter_mut() {
+        for i in (0..self.particles.len()).rev() {
+            let mut particle = self.particles.swap_remove(i);
             draw_circle(particle.x, particle.y, particle.radius, self.particle_color);
 
             particle.x += particle.vx;
             particle.y += particle.vy;
+
+            if particle.lifetime.elapsed() <= self.particle_lifetime {
+                self.particles.push(particle);
+            }
+        }
+
+        if self.particles.len() == 0 && time_elapsed {
+            self.delete = true;
         }
     }
 
     fn create_particle(&self) -> EmittedParticle {
-        let x = rand::gen_range(self.start_x, self.end_x);
-        let y = rand::gen_range(self.start_y, self.end_y);
+        let position = rand::gen_range(0., self.emitter_diameter);
+        let distortion = rand::gen_range(-self.emission_distortion, self.emission_distortion);
+        let x = (self.x + distortion) + position * self.angle_radians.cos();
+        let y = (self.y + distortion) + position * self.angle_radians.sin();
 
         let diffusion_delta =
             rand::gen_range(-self.diffusion_degrees, self.diffusion_degrees).to_radians();
 
-        let angle = self.angle_radians + diffusion_delta;
-
+        let angle = self.angle_emission_radians + diffusion_delta;
         let vx = self.particle_speed * angle.cos();
         let vy = self.particle_speed * angle.sin();
 

@@ -290,12 +290,14 @@ impl Grid {
             }
         }
 
-        for emitter in self.emitters.iter_mut() {
+        for i in (0..self.emitters.len()).rev() {
+            let mut emitter = self.emitters.swap_remove(i);
             emitter.emit();
-        }
 
-        self.emitters
-            .retain(|emitter| emitter.lifetime.elapsed() <= emitter.emitter_duration);
+            if !emitter.delete {
+                self.emitters.push(emitter);
+            }
+        }
 
         if self.frame % 50 == 0 {
             self.duration = start.elapsed().as_micros();

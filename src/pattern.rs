@@ -32,10 +32,12 @@ pub fn smoke() -> EmitterOptions {
         emitter_position: Position::new(100., 100.),
         emitter_diameter: 100.,
         emitter_duration: Duration::from_secs(10),
-        angle_degrees: 45.,
+        angle_degrees: 135.,
+        emission_distortion_px: 10.,
+        frames_per_emission: 100,
         diffusion_degrees: 10.,
         particle_color: Color::from_rgba(200, 1, 1, 255),
-        particles_per_frame: 30,
+        particles_per_emission: 20,
         particle_lifetime: Duration::from_secs(2),
         particle_radius: 3.,
         particle_speed: 1.,
@@ -44,7 +46,6 @@ pub fn smoke() -> EmitterOptions {
 
 fn move_animation(data: &mut AnimationData) {
     let test = (data.raw_frame_counter as f32 + rand::gen_range(0., 5.)).sin() / 10.;
-    println!("{}", test);
     data.vx += test;
     data.vy += test;
 }

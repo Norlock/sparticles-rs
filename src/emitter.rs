@@ -6,9 +6,9 @@ use crate::position::Position;
 pub struct EmitterOptions {
     pub emitter_position: Position,
     pub emitter_diameter: f32,
-    pub emitter_lifetime: Duration,
+    pub emitter_duration: Duration,
     pub angle_degrees: f32,
-    pub diffusion: u32,
+    pub diffusion_degrees: f32,
     pub particle_color: Color,
     pub particles_per_frame: u32,
     pub particle_lifetime: Duration,
@@ -23,16 +23,16 @@ pub struct Emitter {
     start_y: f32,
     end_x: f32,
     end_y: f32,
-    emitter_lifetime: Duration,
     angle_radians: f32,
-    diffusion: u32,
+    diffusion_degrees: f32,
     particle_color: Color,
     particles_per_frame: u32,
     particle_lifetime: Duration,
     particle_radius: f32,
     particle_speed: f32,
     particles: Vec<EmittedParticle>,
-    instant: Instant,
+    pub lifetime: Instant,
+    pub emitter_duration: Duration,
 }
 
 #[derive(Debug)]
@@ -57,7 +57,7 @@ impl Emitter {
             particles_per_frame: options.particles_per_frame,
             particles: Vec::new(),
             particle_color: options.particle_color,
-            diffusion: options.diffusion,
+            diffusion_degrees: options.diffusion_degrees,
             particle_speed: options.particle_speed,
             particle_radius: options.particle_radius,
             start_x,
@@ -67,8 +67,8 @@ impl Emitter {
             particle_lifetime: options.particle_lifetime,
             emitter_diameter: options.emitter_diameter,
             angle_radians: options.angle_degrees,
-            emitter_lifetime: options.emitter_lifetime,
-            instant: Instant::now(),
+            emitter_duration: options.emitter_duration,
+            lifetime: Instant::now(),
         }
     }
 
@@ -92,8 +92,13 @@ impl Emitter {
         let x = rand::gen_range(self.start_x, self.end_x);
         let y = rand::gen_range(self.start_y, self.end_y);
 
-        let vx = self.particle_speed * self.angle_radians.cos();
-        let vy = self.particle_speed * self.angle_radians.sin();
+        let diffusion_delta =
+            rand::gen_range(-self.diffusion_degrees, self.diffusion_degrees).to_radians();
+
+        let angle = self.angle_radians + diffusion_delta;
+
+        let vx = self.particle_speed * angle.cos();
+        let vy = self.particle_speed * angle.sin();
 
         EmittedParticle {
             x,

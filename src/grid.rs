@@ -294,6 +294,9 @@ impl Grid {
             emitter.emit();
         }
 
+        self.emitters
+            .retain(|emitter| emitter.lifetime.elapsed() <= emitter.emitter_duration);
+
         if self.frame % 50 == 0 {
             self.duration = start.elapsed().as_micros();
         }

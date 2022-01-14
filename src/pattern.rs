@@ -35,12 +35,13 @@ pub fn smoke() -> EmitterOptions {
         angle_degrees: 135.,
         emission_distortion_px: 10.,
         frames_per_emission: 100,
-        diffusion_degrees: 10.,
+        diffusion_degrees: 360.,
         particle_color: Color::from_rgba(200, 1, 1, 255),
         particles_per_emission: 20,
         particle_lifetime: Duration::from_secs(2),
         particle_radius: 3.,
         particle_speed: 1.,
+        respect_grid_bounds: true,
     }
 }
 

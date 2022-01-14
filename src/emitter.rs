@@ -16,6 +16,7 @@ pub struct EmitterOptions {
     pub particle_lifetime: Duration,
     pub particle_radius: f32,
     pub particle_speed: f32,
+    pub respect_grid_bounds: bool,
 }
 
 #[derive(Debug)]
@@ -23,6 +24,10 @@ pub struct Emitter {
     emitter_diameter: f32,
     x: f32,
     y: f32,
+    end_x: f32,
+    end_y: f32,
+    grid_position: Position,
+    respect_grid_bounds: bool,
     angle_radians: f32,
     angle_emission_radians: f32,
     diffusion_degrees: f32,
@@ -57,6 +62,8 @@ impl Emitter {
         let angle_emission_radians = angle_radians + inverse_radians;
         let x = options.emitter_position.x + grid_position.x;
         let y = options.emitter_position.y + grid_position.y;
+        let end_x = grid_position.x + grid_position.width;
+        let end_y = grid_position.y + grid_position.height;
 
         Self {
             particles_per_emission: options.particles_per_emission,
@@ -67,6 +74,9 @@ impl Emitter {
             particle_radius: options.particle_radius,
             x,
             y,
+            end_x,
+            end_y,
+            grid_position: grid_position.clone(),
             angle_radians,
             angle_emission_radians,
             emission_distortion: options.emission_distortion_px,
@@ -76,6 +86,7 @@ impl Emitter {
             lifetime: Instant::now(),
             current_frame: 1,
             frames_per_emission: options.frames_per_emission,
+            respect_grid_bounds: options.respect_grid_bounds,
             delete: false,
         }
     }
@@ -97,6 +108,17 @@ impl Emitter {
 
             particle.x += particle.vx;
             particle.y += particle.vy;
+
+            let diameter = particle.radius * 2.;
+
+            if self.respect_grid_bounds
+                && (particle.x < self.grid_position.x
+                    || self.end_x < particle.x + diameter
+                    || particle.y < self.grid_position.y
+                    || self.end_y < particle.y + diameter)
+            {
+                continue; // removes particle.
+            }
 
             if particle.lifetime.elapsed() <= self.particle_lifetime {
                 self.particles.push(particle);

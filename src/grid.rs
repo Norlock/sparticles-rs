@@ -22,8 +22,6 @@ pub struct Grid {
     pub frame: u32, // increments until until_frame. (used for forces).
     pub until_frame: u32,
     pub raw_frame_counter: u32, // Always increments (can be used for animations).
-    pub width: f32,
-    pub height: f32,
     pub cell_width: usize,
     pub cell_height: usize,
     pub duration: u128,
@@ -65,13 +63,14 @@ impl Grid {
             possibility_x_count,
             possibility_y_count,
             possibility_side_length,
-            position,
+            mut position,
             forces,
         } = options;
         let cell_width = possibility_x_count * possibility_side_length;
         let cell_height = possibility_y_count * possibility_side_length;
-        let width = (cell_x_count * cell_width) as f32;
-        let height = (cell_y_count * cell_height) as f32;
+        position.width = (cell_x_count * cell_width) as f32;
+        position.height = (cell_y_count * cell_height) as f32;
+
         let possibility_spots = create_possibility_grid(possibility_x_count, possibility_y_count);
 
         let until_frame: u32 = if let Some(force) = forces.last() {
@@ -87,8 +86,6 @@ impl Grid {
             possibility_y_count,
             possibility_side_length,
             position,
-            width,
-            height,
             possibility_spots,
             cell_width,
             cell_height,
@@ -228,8 +225,9 @@ impl Grid {
         let end_new_x = new_x + particle.diameter;
         let end_new_y = new_y + particle.diameter;
 
-        let x_out_of_bounds = new_x < 0. || self.width <= end_new_x;
-        let y_out_of_bounds = new_y < 0. || self.height <= end_new_y;
+        let x_out_of_bounds = new_x < 0. || self.position.width <= end_new_x;
+        let y_out_of_bounds = new_y < 0. || self.position.height <= end_new_y;
+
         // Inverse direction.
         let elasticity_force = -1. * particle.elasticity_fraction;
 
@@ -252,7 +250,7 @@ impl Grid {
 
         let new_vec_index = self.handle_collision(&mut particle, &mut data);
 
-        particle.transform(self.width, self.height);
+        particle.transform(self.position.width, self.position.height);
         particle.draw(&self.position);
 
         if vec_index != new_vec_index {
@@ -392,8 +390,8 @@ impl Grid {
     fn fill_white_noise(&mut self, attributes: &ParticleAttributes, count: u32) {
         let mut i: u32 = 0;
         while i < count {
-            let x_coord = rand::gen_range(0., self.width);
-            let y_coord = rand::gen_range(0., self.height);
+            let x_coord = rand::gen_range(0., self.position.width);
+            let y_coord = rand::gen_range(0., self.position.height);
             if !self.possibility_taken(x_coord, y_coord) {
                 self.add_particle(x_coord, y_coord, &attributes);
                 i = i + 1;

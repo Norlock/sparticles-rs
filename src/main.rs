@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 mod animation;
 mod animator;
 mod collision;
@@ -22,7 +24,7 @@ use fill_style::FillStyle;
 use force::{Force, ForceType};
 use macroquad::prelude::*;
 use particle::{InitFrame, ParticleAttributes};
-use pattern::{shimmer, shimmer_forces, smoke};
+use pattern::{another_emitter, shimmer, shimmer_forces, smoke};
 use position::Position;
 
 #[macroquad::main("Particles")]
@@ -63,6 +65,7 @@ async fn main() {
 
     grid.fill(&attributes, 20, FillStyle::WhiteNoise);
     grid.add_emitter(smoke());
+    grid.add_emitter(another_emitter());
 
     //let attributes = ParticleAttributes {
     //color: Color::from_rgba(200, 20, 20, 255),

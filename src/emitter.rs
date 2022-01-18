@@ -104,7 +104,6 @@ impl Emitter {
 
         for i in (0..self.particles.len()).rev() {
             let mut particle = self.particles.swap_remove(i);
-            draw_circle(particle.x, particle.y, particle.radius, self.particle_color);
 
             particle.x += particle.vx;
             particle.y += particle.vy;
@@ -127,6 +126,12 @@ impl Emitter {
 
         if self.particles.len() == 0 && time_elapsed {
             self.delete = true;
+        }
+    }
+
+    pub fn draw(&self) {
+        for particle in self.particles.iter() {
+            draw_circle(particle.x, particle.y, particle.radius, self.particle_color);
         }
     }
 

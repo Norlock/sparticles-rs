@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 macroquad = "0.3"
+tokio = { version = "1.15.0", features = ["full"] }

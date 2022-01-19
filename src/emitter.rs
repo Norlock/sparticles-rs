@@ -15,7 +15,9 @@ pub struct EmitterOptions {
     pub frames_per_emission: u8,
     pub particle_lifetime: Duration,
     pub particle_radius: f32,
-    pub particle_speed: f32,
+    pub particle_mass: f32,
+    pub particle_force: f32,
+    pub particle_friction_coefficient: f32,
     pub respect_grid_bounds: bool,
 }
 
@@ -38,7 +40,9 @@ pub struct Emitter {
     current_frame: u8,
     particle_lifetime: Duration,
     particle_radius: f32,
-    particle_speed: f32,
+    particle_mass: f32,
+    particle_force: f32,
+    particle_friction_coefficient: f32,
     particles: Vec<EmittedParticle>,
     lifetime: Instant,
     emitter_duration: Duration,
@@ -49,8 +53,8 @@ pub struct Emitter {
 struct EmittedParticle {
     x: f32,
     y: f32,
-    vx: f32,
-    vy: f32,
+    x_force: f32,
+    y_force: f32,
     radius: f32,
     lifetime: Instant,
 }
@@ -70,7 +74,7 @@ impl Emitter {
             particles: Vec::new(),
             particle_color: options.particle_color,
             diffusion_degrees: options.diffusion_degrees,
-            particle_speed: options.particle_speed,
+            particle_mass: options.particle_mass,
             particle_radius: options.particle_radius,
             x,
             y,
@@ -87,6 +91,8 @@ impl Emitter {
             current_frame: 1,
             frames_per_emission: options.frames_per_emission,
             respect_grid_bounds: options.respect_grid_bounds,
+            particle_friction_coefficient: options.particle_friction_coefficient,
+            particle_force: options.particle_force,
             delete: false,
         }
     }
@@ -105,8 +111,19 @@ impl Emitter {
         for i in (0..self.particles.len()).rev() {
             let mut particle = self.particles.swap_remove(i);
 
-            particle.x += particle.vx;
-            particle.y += particle.vy;
+            let x_friction = particle.x_force * self.particle_friction_coefficient;
+            let y_friction = particle.y_force * self.particle_friction_coefficient;
+
+            particle.x_force -= x_friction;
+            particle.y_force -= y_friction;
+
+            let vx = particle.x_force / self.particle_mass;
+            let vy = particle.y_force / self.particle_mass;
+
+            particle.x += vx;
+            particle.y += vy;
+
+            draw_circle(particle.x, particle.y, particle.radius, self.particle_color);
 
             let diameter = particle.radius * 2.;
 
@@ -129,12 +146,6 @@ impl Emitter {
         }
     }
 
-    pub fn draw(&self) {
-        for particle in self.particles.iter() {
-            draw_circle(particle.x, particle.y, particle.radius, self.particle_color);
-        }
-    }
-
     fn create_particle(&self) -> EmittedParticle {
         let position = rand::gen_range(0., self.emitter_diameter);
         let distortion = rand::gen_range(-self.emission_distortion, self.emission_distortion);
@@ -145,15 +156,15 @@ impl Emitter {
             rand::gen_range(-self.diffusion_degrees, self.diffusion_degrees).to_radians();
 
         let angle = self.angle_emission_radians + diffusion_delta;
-        let vx = self.particle_speed * angle.cos();
-        let vy = self.particle_speed * angle.sin();
+        let x_force = self.particle_force * angle.cos();
+        let y_force = self.particle_force * angle.sin();
 
         EmittedParticle {
             x,
             y,
             lifetime: Instant::now(),
-            vx,
-            vy,
+            x_force,
+            y_force,
             radius: self.particle_radius,
         }
     }

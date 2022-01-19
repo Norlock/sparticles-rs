@@ -1,5 +1,4 @@
-use std::sync::Arc;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -279,6 +278,15 @@ impl Grid {
     pub fn draw(&mut self) {
         let start = Instant::now();
 
+        for i in (0..self.emitters.len()).rev() {
+            let mut emitter = self.emitters.swap_remove(i);
+            emitter.emit();
+
+            if !emitter.delete {
+                self.emitters.push(emitter);
+            }
+        }
+
         for vec_index in 0..self.possibility_spots.len() {
             for spot_index in (0..self.possibility_spots[vec_index].len()).rev() {
                 let mut particle = &mut self.possibility_spots[vec_index][spot_index];
@@ -289,30 +297,6 @@ impl Grid {
 
                 self.handle_particle(vec_index, spot_index);
             }
-        }
-
-        let mut handles = vec![];
-        let emitters = Arc::new(Mutex::new(vec![]));
-
-        for i in (0..self.emitters.len()).rev() {
-            let mut emitter = self.emitters.swap_remove(i);
-            let clone = Arc::clone(&emitters);
-            handles.push(thread::spawn(move || {
-                emitter.emit();
-                if !emitter.delete {
-                    let mut v = clone.lock().unwrap();
-                    v.push(emitter);
-                }
-            }));
-        }
-
-        for handle in handles {
-            handle.join().unwrap();
-        }
-
-        self.emitters = Arc::try_unwrap(emitters).unwrap().into_inner().unwrap();
-        for emitter in self.emitters.iter() {
-            emitter.draw();
         }
 
         if self.frame % 50 == 0 {

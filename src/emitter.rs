@@ -23,7 +23,7 @@ pub struct EmitterOptions {
     pub particle_force: f32,
     pub particle_friction_coefficient: f32,
     pub respect_grid_bounds: bool,
-    pub color_animation: ColorAnimation,
+    pub animations: Vec<Box<dyn Animatee>>,
 }
 
 #[derive(Debug)]
@@ -51,7 +51,7 @@ pub struct Emitter {
     particles: Vec<EmittedParticle>,
     lifetime: Instant,
     emitter_duration: Duration,
-    color_animation: ColorAnimation,
+    animations: Vec<Box<dyn Animatee>>,
     pub delete: bool,
 }
 
@@ -100,7 +100,7 @@ impl Emitter {
             respect_grid_bounds: options.respect_grid_bounds,
             particle_friction_coefficient: options.particle_friction_coefficient,
             particle_force: options.particle_force,
-            color_animation: options.color_animation,
+            animations: options.animations,
             delete: false,
         }
     }
@@ -142,7 +142,10 @@ impl Emitter {
             };
 
             // TODO refactor to vec of animations
-            self.color_animation.animate(&mut data, &particle.lifetime);
+            for animator in self.animations.iter() {
+                animator.animate(&mut data, &particle.lifetime);
+            }
+
             particle.color = data.color;
 
             draw_circle(particle.x, particle.y, particle.radius, particle.color);

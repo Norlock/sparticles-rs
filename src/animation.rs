@@ -1,11 +1,18 @@
 use macroquad::prelude::Color;
 use std::fmt;
+use std::fmt::Debug;
 use std::time::Instant;
 
 pub type Animate = fn(data: &mut AnimationData);
 
 pub trait Animatee {
     fn animate(&self, data: &mut AnimationData, lifetime: &Instant);
+}
+
+impl Debug for dyn Animatee {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "Animate")
+    }
 }
 
 pub struct AnimationData {

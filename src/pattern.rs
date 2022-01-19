@@ -52,16 +52,16 @@ pub fn smoke() -> EmitterOptions {
         particle_force: 22.,
         particle_friction_coefficient: 0.01,
         respect_grid_bounds: true,
-        color_animation,
+        animations: vec![Box::new(color_animation)],
     }
 }
 
 pub fn another_emitter() -> EmitterOptions {
     let color_animation = ColorAnimation {
-        color1: Color::from_rgba(212, 132, 64, 255),
-        color2: Color::from_rgba(145, 42, 245, 255),
-        from_ms: 1000,
-        until_ms: 4000,
+        color2: Color::from_rgba(212, 132, 64, 255),
+        color1: Color::from_rgba(2, 200, 1, 255),
+        from_ms: 200,
+        until_ms: 700,
     };
 
     EmitterOptions {
@@ -71,16 +71,16 @@ pub fn another_emitter() -> EmitterOptions {
         angle_degrees: 135.,
         emission_distortion_px: 0.,
         frames_per_emission: 10,
-        diffusion_degrees: 360.,
+        diffusion_degrees: 45.,
         particle_color: Color::from_rgba(2, 200, 1, 255),
         particles_per_emission: 40,
         particle_lifetime: Duration::from_secs(2),
         particle_radius: 3.,
         particle_mass: 1.,
-        particle_friction_coefficient: 0.01,
+        particle_friction_coefficient: 0.008,
         particle_force: 2.5,
-        respect_grid_bounds: true,
-        color_animation,
+        respect_grid_bounds: false,
+        animations: vec![Box::new(color_animation)],
     }
     //EmitterOptions {
     //emitter_position: Position::new(500., 500.),

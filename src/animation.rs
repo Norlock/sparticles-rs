@@ -1,7 +1,12 @@
 use macroquad::prelude::Color;
 use std::fmt;
+use std::time::Instant;
 
 pub type Animate = fn(data: &mut AnimationData);
+
+pub trait Animatee {
+    fn animate(&self, data: &mut AnimationData, lifetime: &Instant);
+}
 
 pub struct AnimationData {
     pub color: Color,

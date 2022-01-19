@@ -1,7 +1,11 @@
 use macroquad::prelude::*;
 use std::time::{Duration, Instant};
 
-use crate::position::Position;
+use crate::{
+    animation::{Animatee, AnimationData},
+    color_animation::ColorAnimation,
+    position::Position,
+};
 
 pub struct EmitterOptions {
     pub emitter_position: Position,
@@ -19,6 +23,7 @@ pub struct EmitterOptions {
     pub particle_force: f32,
     pub particle_friction_coefficient: f32,
     pub respect_grid_bounds: bool,
+    pub color_animation: ColorAnimation,
 }
 
 #[derive(Debug)]
@@ -46,6 +51,7 @@ pub struct Emitter {
     particles: Vec<EmittedParticle>,
     lifetime: Instant,
     emitter_duration: Duration,
+    color_animation: ColorAnimation,
     pub delete: bool,
 }
 
@@ -57,6 +63,7 @@ struct EmittedParticle {
     y_force: f32,
     radius: f32,
     lifetime: Instant,
+    color: Color,
 }
 
 impl Emitter {
@@ -93,6 +100,7 @@ impl Emitter {
             respect_grid_bounds: options.respect_grid_bounds,
             particle_friction_coefficient: options.particle_friction_coefficient,
             particle_force: options.particle_force,
+            color_animation: options.color_animation,
             delete: false,
         }
     }
@@ -123,9 +131,21 @@ impl Emitter {
             particle.x += vx;
             particle.y += vy;
 
-            draw_circle(particle.x, particle.y, particle.radius, self.particle_color);
-
             let diameter = particle.radius * 2.;
+
+            let mut data: AnimationData = AnimationData {
+                vx,
+                vy,
+                diameter,
+                color: particle.color,
+                raw_frame_counter: 0,
+            };
+
+            // TODO refactor to vec of animations
+            self.color_animation.animate(&mut data, &particle.lifetime);
+            particle.color = data.color;
+
+            draw_circle(particle.x, particle.y, particle.radius, particle.color);
 
             if self.respect_grid_bounds
                 && (particle.x < self.grid_position.x
@@ -166,6 +186,7 @@ impl Emitter {
             x_force,
             y_force,
             radius: self.particle_radius,
+            color: self.particle_color,
         }
     }
 }

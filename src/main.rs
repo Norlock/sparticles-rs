@@ -3,6 +3,7 @@
 mod animation;
 mod animator;
 mod collision;
+mod color_animation;
 mod container;
 mod emitter;
 mod fill_style;

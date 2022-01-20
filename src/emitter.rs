@@ -16,7 +16,7 @@ pub struct EmitterOptions {
     pub emission_distortion_px: f32,
     pub particle_color: Color,
     pub particles_per_emission: u32,
-    pub frames_per_emission: u8,
+    pub delay_between_emission: Duration,
     pub particle_lifetime: Duration,
     pub particle_radius: f32,
     pub particle_mass: f32,
@@ -40,9 +40,9 @@ pub struct Emitter {
     diffusion_degrees: f32,
     particle_color: Color,
     particles_per_emission: u32,
-    frames_per_emission: u8,
+    ms_delay_between_emission: u128,
     emission_distortion: f32,
-    current_frame: u8,
+    current_emission: i32,
     particle_lifetime: Duration,
     particle_radius: f32,
     particle_mass: f32,
@@ -95,8 +95,8 @@ impl Emitter {
             emitter_diameter: options.emitter_diameter,
             emitter_duration: options.emitter_duration,
             lifetime: Instant::now(),
-            current_frame: 1,
-            frames_per_emission: options.frames_per_emission,
+            current_emission: -1,
+            ms_delay_between_emission: options.delay_between_emission.as_millis(),
             respect_grid_bounds: options.respect_grid_bounds,
             particle_friction_coefficient: options.particle_friction_coefficient,
             particle_force: options.particle_force,
@@ -106,14 +106,15 @@ impl Emitter {
     }
 
     pub fn emit(&mut self) {
-        let time_elapsed = self.lifetime.elapsed() > self.emitter_duration;
-        if !time_elapsed && self.current_frame == self.frames_per_emission {
+        let elapsed = self.lifetime.elapsed();
+        let time_elapsed = elapsed > self.emitter_duration;
+        let new_emission = (elapsed.as_millis() / self.ms_delay_between_emission) as i32;
+
+        if !time_elapsed && self.current_emission < new_emission {
+            self.current_emission = new_emission;
             for _ in 0..self.particles_per_emission {
                 self.particles.push(self.create_particle());
             }
-            self.current_frame = 1;
-        } else {
-            self.current_frame += 1;
         }
 
         for i in (0..self.particles.len()).rev() {
@@ -141,7 +142,6 @@ impl Emitter {
                 raw_frame_counter: 0,
             };
 
-            // TODO refactor to vec of animations
             for animator in self.animations.iter() {
                 animator.animate(&mut data, &particle.lifetime);
             }

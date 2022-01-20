@@ -66,7 +66,7 @@ async fn main() {
 
     grid.fill(&attributes, 20, FillStyle::WhiteNoise);
     grid.add_emitter(smoke());
-    grid.add_emitter(another_emitter());
+    //grid.add_emitter(another_emitter());
 
     //let attributes = ParticleAttributes {
     //color: Color::from_rgba(200, 20, 20, 255),

@@ -1,6 +1,7 @@
-#![allow(dead_code, unused_imports)]
+#![allow(dead_code)]
 
 mod animation;
+mod animation_handler;
 mod animator;
 mod collision;
 mod color_animation;
@@ -14,18 +15,14 @@ mod particle;
 mod pattern;
 mod position;
 
-use std::rc::Rc;
-
-use animation::AnimationData;
-use animator::Animator;
 use force_builder::ForceBuilder;
 use grid::{Grid, GridOptions};
 
 use fill_style::FillStyle;
 use force::{Force, ForceType};
 use macroquad::prelude::*;
-use particle::{InitFrame, ParticleAttributes};
-use pattern::{another_emitter, shimmer, shimmer_forces, smoke};
+use particle::ParticleAttributes;
+use pattern::{another_emitter, shimmer_animations, shimmer_forces, smoke};
 use position::Position;
 
 #[macroquad::main("Particles")]
@@ -48,8 +45,7 @@ async fn main() {
         diameter: 5.2,
         elasticity_fraction: 0.98,
         mass: 1.,
-        init_frame: InitFrame::Random,
-        animator: Rc::new(Animator::new(100)),
+        animation_options: None,
     };
 
     grid.fill(&attributes, 200, FillStyle::WhiteNoise);
@@ -60,12 +56,11 @@ async fn main() {
         diameter: 5.,
         elasticity_fraction: 0.1,
         mass: 1.5,
-        init_frame: InitFrame::Random,
-        animator: Rc::new(shimmer()),
+        animation_options: Some(shimmer_animations()),
     };
 
     grid.fill(&attributes, 20, FillStyle::WhiteNoise);
-    grid.add_emitter(smoke());
+    //grid.add_emitter(smoke());
     //grid.add_emitter(another_emitter());
 
     //let attributes = ParticleAttributes {

@@ -1,23 +1,40 @@
-use std::f32::consts::PI;
+use std::rc::Rc;
 use std::time::Duration;
 
 use crate::animation::AnimationData;
+use crate::animation_handler::{AnimationOptions, StartAnimationAt};
 use crate::animator::Animator;
-use crate::color_animation::{self, ColorAnimation};
+use crate::color_animation::ColorAnimation;
 use crate::emitter::EmitterOptions;
 use crate::force::{Force, ForceType};
 use crate::force_builder::ForceBuilder;
 use crate::position::Position;
 use macroquad::prelude::*;
 
-pub fn shimmer() -> Animator {
-    let mut animator = Animator::new(900);
+pub fn shimmer_animations() -> AnimationOptions {
+    let mut animator = Animator {
+        animations: Vec::new(),
+        duration_ms: 2000,
+    };
 
-    animator.add_time_based(shimmer_out_animation, 0, 100);
-    animator.add_time_based(shimmer_in_animation, 700, 900);
-    //animator.add_allways(move_animation);
+    animator.add(Box::new(ColorAnimation {
+        color1: Color::from_rgba(255, 255, 0, 255),
+        color2: Color::from_rgba(255, 255, 0, 0),
+        from_ms: 0,
+        until_ms: 1000,
+    }));
 
-    animator
+    animator.add(Box::new(ColorAnimation {
+        color1: Color::from_rgba(255, 255, 0, 0),
+        color2: Color::from_rgba(255, 255, 0, 255),
+        from_ms: 1000,
+        until_ms: 2000,
+    }));
+
+    AnimationOptions {
+        animator: Rc::new(animator),
+        start_at: StartAnimationAt::Random,
+    }
 }
 
 fn shimmer_out_animation(data: &mut AnimationData) {
@@ -97,12 +114,6 @@ pub fn another_emitter() -> EmitterOptions {
     //particle_speed: 1.,
     //respect_grid_bounds: true,
     //}
-}
-
-fn move_animation(data: &mut AnimationData) {
-    let test = (data.raw_frame_counter as f32 + rand::gen_range(0., 5.)).sin() / 10.;
-    data.vx += test;
-    data.vy += test;
 }
 
 pub fn shimmer_forces() -> Vec<Force> {

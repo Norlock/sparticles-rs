@@ -2,8 +2,7 @@ use macroquad::prelude::*;
 use std::time::{Duration, Instant};
 
 use crate::{
-    animation::{Animatee, AnimationData},
-    color_animation::ColorAnimation,
+    animation::{Animate, AnimationData},
     position::Position,
 };
 
@@ -20,10 +19,12 @@ pub struct EmitterOptions {
     pub particle_lifetime: Duration,
     pub particle_radius: f32,
     pub particle_mass: f32,
+    /// Newton force
     pub particle_force: f32,
+    /// number between 0 and 1, e.g. 0.001
     pub particle_friction_coefficient: f32,
     pub respect_grid_bounds: bool,
-    pub animations: Vec<Box<dyn Animatee>>,
+    pub animations: Vec<Box<dyn Animate>>,
 }
 
 #[derive(Debug)]
@@ -51,7 +52,7 @@ pub struct Emitter {
     particles: Vec<EmittedParticle>,
     lifetime: Instant,
     emitter_duration: Duration,
-    animations: Vec<Box<dyn Animatee>>,
+    animations: Vec<Box<dyn Animate>>,
     pub delete: bool,
 }
 
@@ -137,13 +138,12 @@ impl Emitter {
             let mut data: AnimationData = AnimationData {
                 vx,
                 vy,
-                diameter,
+                radius: diameter,
                 color: particle.color,
-                raw_frame_counter: 0,
             };
 
             for animator in self.animations.iter() {
-                animator.animate(&mut data, &particle.lifetime);
+                animator.animate(&mut data, self.lifetime.elapsed().as_millis());
             }
 
             particle.color = data.color;

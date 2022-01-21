@@ -23,7 +23,6 @@ pub struct Grid {
     pub position: Position,
     pub frame: u32, // increments until until_frame. (used for forces).
     pub until_frame: u32,
-    pub raw_frame_counter: u32, // Always increments (can be used for animations).
     pub cell_width: usize,
     pub cell_height: usize,
     pub duration: u128,
@@ -92,7 +91,6 @@ impl Grid {
             cell_width,
             cell_height,
             frame: 0,
-            raw_frame_counter: 0,
             duration: 0,
             particle_count: 0,
             until_frame,
@@ -241,7 +239,7 @@ impl Grid {
             particle.vy *= elasticity_force;
         }
 
-        particle.animate(self.raw_frame_counter);
+        particle.animate();
 
         let mut data = CollisionData {
             new_x,
@@ -307,12 +305,6 @@ impl Grid {
             self.frame += 1;
         } else {
             self.frame = 0;
-        }
-
-        if self.raw_frame_counter < u32::MAX {
-            self.raw_frame_counter += 1;
-        } else {
-            self.raw_frame_counter = 0;
         }
     }
 
@@ -444,7 +436,7 @@ mod test {
             diameter: 5.,
             elasticity_fraction: 0.9,
             mass: 1.,
-            init_frame: InitFrame::Zero,
+            animation_start_at: InitAnimation::Zero,
         }
     }
 

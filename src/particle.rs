@@ -1,11 +1,9 @@
-use std::rc::Rc;
-
-use crate::animation::{Animate, Animation, AnimationData};
-use crate::animator::Animator;
+use crate::animation::AnimationData;
+use crate::animation_handler::AnimationHandler;
+use crate::animation_handler::AnimationOptions;
 use crate::collision::CollisionData;
 use macroquad::miniquad::gl::UINT32_MAX;
 use macroquad::prelude::draw_circle;
-use macroquad::prelude::rand;
 use macroquad::prelude::Color;
 
 use crate::position::Position;
@@ -25,13 +23,7 @@ pub struct Particle {
     pub elasticity_fraction: f32,
     /// number in Newton (m * g).
     pub friction: f32,
-    pub animator: Rc<Animator>,
-    pub frame: u32,
-}
-
-pub enum InitFrame {
-    Zero,
-    Random,
+    pub animation_handler: Option<AnimationHandler>,
 }
 
 pub struct ParticleAttributes {
@@ -43,20 +35,14 @@ pub struct ParticleAttributes {
     pub color: Color,
     pub mass: f32,
     pub diameter: f32,
-    pub animator: Rc<Animator>,
-    pub init_frame: InitFrame,
+    pub animation_options: Option<AnimationOptions>,
 }
 
 impl Particle {
     pub fn new(x: f32, y: f32, attributes: &ParticleAttributes) -> Self {
-        let animator = &attributes.animator;
+        let animation_handler = AnimationHandler::new(&attributes.animation_options);
 
-        let init_frame = match attributes.init_frame {
-            InitFrame::Zero => 0,
-            InitFrame::Random => rand::gen_range(0, animator.until_frame),
-        };
-
-        let mut particle = Self {
+        Self {
             x,
             y,
             vx: 0.,
@@ -68,15 +54,8 @@ impl Particle {
             elasticity_fraction: attributes.elasticity_fraction,
             mass: attributes.mass,
             queue_frame: UINT32_MAX,
-            animator: animator.clone(),
-            frame: 0,
-        };
-
-        for _ in 0..init_frame {
-            particle.animate(0);
+            animation_handler,
         }
-
-        particle
     }
 
     fn move_if_overlaps(&mut self, other: &mut Particle) {
@@ -164,8 +143,7 @@ impl Particle {
             || other_new_y <= end_new_y && end_new_y <= end_other_new_y;
 
         if !inside_x || !inside_y {
-            // No collision
-            return false;
+            return false; // No collision
         }
 
         if self.mass == other.mass {
@@ -202,40 +180,22 @@ impl Particle {
         return true;
     }
 
-    pub fn animate(&mut self, raw_frame_counter: u32) {
-        let mut data = AnimationData {
-            color: self.color,
-            diameter: self.diameter,
-            vx: self.vx,
-            vy: self.vy,
-            raw_frame_counter,
-        };
+    pub fn animate(&mut self) {
+        if let Some(animator) = &mut self.animation_handler {
+            let mut data = AnimationData {
+                color: self.color,
+                radius: self.radius,
+                vx: self.vx,
+                vy: self.vy,
+            };
 
-        for animation in self.animator.animations.iter() {
-            match animation {
-                Animation::Allways(animate) => animate(&mut data),
-                Animation::TimeBased {
-                    animate,
-                    start,
-                    until,
-                } => {
-                    if *start <= self.frame && self.frame < *until {
-                        animate(&mut data);
-                    }
-                }
-            }
+            animator.animate(&mut data);
 
             self.color = data.color;
-            self.diameter = data.diameter;
-            self.radius = data.diameter / 2.;
+            self.radius = data.radius;
+            self.diameter = data.radius * 2.;
             self.vx = data.vx;
             self.vy = data.vy;
-        }
-
-        if self.frame + 1 < self.animator.until_frame {
-            self.frame += 1;
-        } else {
-            self.frame = 0;
         }
     }
 

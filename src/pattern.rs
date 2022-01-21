@@ -33,7 +33,7 @@ pub fn shimmer_animations() -> AnimationOptions {
 
     AnimationOptions {
         animator: Rc::new(animator),
-        start_at: StartAnimationAt::Random,
+        start_at: StartAnimationAt::RangeMs(0, 500),
     }
 }
 

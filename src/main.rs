@@ -48,7 +48,7 @@ async fn main() {
         animation_options: None,
     };
 
-    grid.fill(&attributes, 200, FillStyle::WhiteNoise);
+    //grid.fill(&attributes, 200, FillStyle::WhiteNoise);
 
     let attributes = ParticleAttributes {
         color: Color::from_rgba(255, 255, 0, 255),
@@ -59,7 +59,7 @@ async fn main() {
         animation_options: Some(shimmer_animations()),
     };
 
-    grid.fill(&attributes, 20, FillStyle::WhiteNoise);
+    grid.fill(&attributes, 50, FillStyle::WhiteNoise);
     //grid.add_emitter(smoke());
     //grid.add_emitter(another_emitter());
 

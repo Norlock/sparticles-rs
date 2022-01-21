@@ -15,6 +15,7 @@ pub struct AnimationHandler {
 pub enum StartAnimationAt {
     Zero,
     Random,
+    RangeMs(u64, u64),
 }
 
 pub struct AnimationOptions {
@@ -30,6 +31,7 @@ impl AnimationHandler {
                 StartAnimationAt::Random => {
                     rand::gen_range(0, animation_handler.animator.duration_ms as u64)
                 }
+                StartAnimationAt::RangeMs(start, end) => rand::gen_range(start, end),
             };
             Some(AnimationHandler {
                 lifetime: Instant::now(),

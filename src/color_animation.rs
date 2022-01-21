@@ -18,7 +18,7 @@ impl Animate for ColorAnimation {
         }
 
         let delta_current = anim_cycle_ms - self.from_ms;
-        let delta_max = self.until_ms - anim_cycle_ms;
+        let delta_max = self.until_ms - self.from_ms;
 
         // calculate percent
         let percent = delta_current as f32 / delta_max as f32;

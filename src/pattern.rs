@@ -9,6 +9,7 @@ use crate::emitter::EmitterOptions;
 use crate::force::{Force, ForceType};
 use crate::force_builder::ForceBuilder;
 use crate::position::Position;
+use crate::size_animation::SizeAnimation;
 use macroquad::prelude::*;
 
 pub fn shimmer_animations() -> AnimationOptions {
@@ -31,18 +32,24 @@ pub fn shimmer_animations() -> AnimationOptions {
         until_ms: 2000,
     }));
 
+    animator.add(Box::new(SizeAnimation {
+        from_ms: 0,
+        until_ms: 750,
+        start_radius: 2.5,
+        end_radius: 1.,
+    }));
+
+    animator.add(Box::new(SizeAnimation {
+        from_ms: 750,
+        until_ms: 1500,
+        start_radius: 1.,
+        end_radius: 2.5,
+    }));
+
     AnimationOptions {
         animator: Rc::new(animator),
         start_at: StartAnimationAt::RangeMs(0, 500),
     }
-}
-
-fn shimmer_out_animation(data: &mut AnimationData) {
-    data.color.a -= 0.01;
-}
-
-fn shimmer_in_animation(data: &mut AnimationData) {
-    data.color.a += 0.005;
 }
 
 pub fn smoke() -> EmitterOptions {

@@ -60,7 +60,7 @@ async fn main() {
     };
 
     grid.fill(&attributes, 50, FillStyle::WhiteNoise);
-    //grid.add_emitter(smoke());
+    grid.add_emitter(smoke());
     //grid.add_emitter(another_emitter());
 
     //let attributes = ParticleAttributes {

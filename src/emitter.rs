@@ -143,7 +143,7 @@ impl Emitter {
             };
 
             for animator in self.animations.iter() {
-                animator.animate(&mut data, self.lifetime.elapsed().as_millis());
+                animator.animate(&mut data, particle.lifetime.elapsed().as_millis());
             }
 
             particle.color = data.color;

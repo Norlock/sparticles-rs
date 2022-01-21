@@ -26,7 +26,7 @@ pub struct AnimationOptions {
 impl AnimationHandler {
     pub fn new(options: &Option<AnimationOptions>) -> Option<Self> {
         if let Some(animation_handler) = options {
-            let start_frame = match animation_handler.start_at {
+            let animation_offset_ms = match animation_handler.start_at {
                 StartAnimationAt::Zero => 0,
                 StartAnimationAt::Random => {
                     rand::gen_range(0, animation_handler.animator.duration_ms as u64)
@@ -37,7 +37,7 @@ impl AnimationHandler {
                 lifetime: Instant::now(),
                 animator: animation_handler.animator.clone(),
                 iteration: 0,
-                animation_offset_ms: start_frame,
+                animation_offset_ms,
             })
         } else {
             None

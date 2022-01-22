@@ -70,7 +70,7 @@ pub fn smoke() -> EmitterOptions {
         particle_color: Color::from_rgba(200, 100, 1, 255),
         particles_per_emission: 200,
         particle_lifetime: Duration::from_secs(2),
-        particle_radius: 3.,
+        particle_radius: 6.,
         particle_mass: 10.,
         particle_force: 22.,
         particle_friction_coefficient: 0.01,
@@ -123,11 +123,11 @@ pub fn another_emitter() -> EmitterOptions {
 }
 
 pub fn shimmer_forces() -> Option<ForceHandler> {
-    let mut force_handler = ForceHandler::new(Duration::from_secs(5));
+    let mut force_handler = ForceHandler::new(Duration::from_secs(4));
 
     force_handler.add(Box::new(NewtonForce {
         from_ms: 0,
-        until_ms: 1200,
+        until_ms: 1000,
         nx: 1.,
         ny: 1.,
         max_x: 3.,
@@ -135,8 +135,8 @@ pub fn shimmer_forces() -> Option<ForceHandler> {
     }));
 
     force_handler.add(Box::new(NewtonForce {
-        from_ms: 3000,
-        until_ms: 4000,
+        from_ms: 2000,
+        until_ms: 3000,
         nx: -1.,
         ny: -1.,
         max_x: -3.,
@@ -144,13 +144,21 @@ pub fn shimmer_forces() -> Option<ForceHandler> {
     }));
 
     force_handler.add(Box::new(NewtonForce {
-        from_ms: 4000,
-        until_ms: 4500,
+        from_ms: 3000,
+        until_ms: 3500,
         nx: 1.,
         ny: -1.,
         max_x: -3.,
         max_y: -3.,
     }));
 
+    force_handler.add(Box::new(NewtonForce {
+        from_ms: 3500,
+        until_ms: 4000,
+        nx: -1.,
+        ny: 1.,
+        max_x: -3.,
+        max_y: -3.,
+    }));
     Some(force_handler)
 }

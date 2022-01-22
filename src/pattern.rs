@@ -1,15 +1,13 @@
 use std::rc::Rc;
 use std::time::Duration;
 
-use crate::animation::AnimationData;
 use crate::animation_handler::{AnimationOptions, StartAnimationAt};
 use crate::animator::Animator;
 use crate::color_animation::ColorAnimation;
 use crate::emitter::EmitterOptions;
-use crate::force::{Force, ForceType};
-use crate::force_builder::ForceBuilder;
+use crate::force_handler::ForceHandler;
+use crate::newton_force::NewtonForce;
 use crate::position::Position;
-use crate::size_animation::SizeAnimation;
 use macroquad::prelude::*;
 
 pub fn shimmer_animations() -> AnimationOptions {
@@ -19,36 +17,37 @@ pub fn shimmer_animations() -> AnimationOptions {
     };
 
     animator.add(Box::new(ColorAnimation {
-        color1: Color::from_rgba(255, 255, 0, 255),
-        color2: Color::from_rgba(255, 255, 0, 0),
+        color1: Color::from_rgba(255, 255, 255, 255),
+        color2: Color::from_rgba(255, 255, 255, 0),
         from_ms: 0,
-        until_ms: 1000,
+        until_ms: 800,
     }));
 
     animator.add(Box::new(ColorAnimation {
-        color1: Color::from_rgba(255, 255, 0, 0),
-        color2: Color::from_rgba(255, 255, 0, 255),
-        from_ms: 1000,
+        color1: Color::from_rgba(255, 255, 255, 0),
+        color2: Color::from_rgba(255, 255, 255, 255),
+        from_ms: 800,
         until_ms: 2000,
     }));
 
-    animator.add(Box::new(SizeAnimation {
-        from_ms: 0,
-        until_ms: 750,
-        start_radius: 2.5,
-        end_radius: 1.,
-    }));
+    //animator.add(Box::new(SizeAnimation {
+    //from_ms: 0,
+    //until_ms: 750,
+    //start_radius: 2.5,
+    //end_radius: 1.,
+    //}));
 
-    animator.add(Box::new(SizeAnimation {
-        from_ms: 750,
-        until_ms: 1500,
-        start_radius: 1.,
-        end_radius: 2.5,
-    }));
+    //animator.add(Box::new(SizeAnimation {
+    //from_ms: 750,
+    //until_ms: 1500,
+    //start_radius: 1.,
+    //end_radius: 2.5,
+    //}));
 
     AnimationOptions {
         animator: Rc::new(animator),
-        start_at: StartAnimationAt::RangeMs(0, 500),
+        //start_at: StartAnimationAt::RangeMs(0, 500),
+        start_at: StartAnimationAt::Zero,
     }
 }
 
@@ -103,7 +102,7 @@ pub fn another_emitter() -> EmitterOptions {
         particle_mass: 1.,
         particle_friction_coefficient: 0.008,
         particle_force: 2.5,
-        respect_grid_bounds: false,
+        respect_grid_bounds: true,
         animations: vec![Box::new(color_animation)],
     }
     //EmitterOptions {
@@ -123,41 +122,35 @@ pub fn another_emitter() -> EmitterOptions {
     //}
 }
 
-pub fn shimmer_forces() -> Vec<Force> {
-    let mut builder = ForceBuilder::new();
+pub fn shimmer_forces() -> Option<ForceHandler> {
+    let mut force_handler = ForceHandler::new(Duration::from_secs(5));
 
-    builder.add(
-        ForceType::Static {
-            vx: -0.002,
-            vy: -0.001,
-        },
-        100,
-    );
+    force_handler.add(Box::new(NewtonForce {
+        from_ms: 0,
+        until_ms: 1200,
+        nx: 1.,
+        ny: 1.,
+        max_x: 3.,
+        max_y: 3.,
+    }));
 
-    builder.add(ForceType::None, 200);
-    builder.add(
-        ForceType::Static {
-            vx: 0.002,
-            vy: 0.001,
-        },
-        200,
-    );
+    force_handler.add(Box::new(NewtonForce {
+        from_ms: 3000,
+        until_ms: 4000,
+        nx: -1.,
+        ny: -1.,
+        max_x: -3.,
+        max_y: -3.,
+    }));
 
-    builder.add(ForceType::None, 200);
-    builder.add(
-        ForceType::Static {
-            vx: -0.002,
-            vy: -0.001,
-        },
-        100,
-    );
-    //builder.add(
-    //ForceType::Static {
-    //vx: -0.002,
-    //vy: -0.002,
-    //},
-    //100,
-    //);
+    force_handler.add(Box::new(NewtonForce {
+        from_ms: 4000,
+        until_ms: 4500,
+        nx: 1.,
+        ny: -1.,
+        max_x: -3.,
+        max_y: -3.,
+    }));
 
-    builder.build()
+    Some(force_handler)
 }

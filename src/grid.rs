@@ -1,12 +1,11 @@
-use std::sync::{Arc, Mutex};
-use std::thread;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use crate::{
+    animation_handler,
     collision::CollisionData,
     emitter::{Emitter, EmitterOptions},
     fill_style::FillStyle,
-    force::Force,
+    force_handler::{self, ForceHandler},
     particle::{Particle, ParticleAttributes},
     position::Position,
 };
@@ -21,14 +20,14 @@ pub struct Grid {
     pub possibility_y_count: usize,
     pub possibility_side_length: usize,
     pub position: Position,
-    pub frame: u32, // increments until until_frame. (used for forces).
-    pub until_frame: u32,
+    pub frame: u64,
     pub cell_width: usize,
     pub cell_height: usize,
     pub duration: u128,
     pub particle_count: u32,
-    pub forces: Vec<Force>,
+    pub force_handler: Option<ForceHandler>,
     pub emitters: Vec<Emitter>,
+    pub lifetime: Instant,
 }
 
 pub struct GridOptions {
@@ -38,7 +37,7 @@ pub struct GridOptions {
     pub possibility_y_count: usize,
     pub possibility_side_length: usize,
     pub position: Position,
-    pub forces: Vec<Force>,
+    pub force_handler: Option<ForceHandler>,
 }
 
 fn create_possibility_grid(
@@ -65,7 +64,7 @@ impl Grid {
             possibility_y_count,
             possibility_side_length,
             mut position,
-            forces,
+            force_handler,
         } = options;
         let cell_width = possibility_x_count * possibility_side_length;
         let cell_height = possibility_y_count * possibility_side_length;
@@ -73,12 +72,6 @@ impl Grid {
         position.height = (cell_y_count * cell_height) as f32;
 
         let possibility_spots = create_possibility_grid(possibility_x_count, possibility_y_count);
-
-        let until_frame: u32 = if let Some(force) = forces.last() {
-            force.until_frame
-        } else {
-            u32::MAX
-        };
 
         Self {
             cell_x_count,
@@ -93,9 +86,9 @@ impl Grid {
             frame: 0,
             duration: 0,
             particle_count: 0,
-            until_frame,
-            forces,
+            force_handler,
             emitters: Vec::new(),
+            lifetime: Instant::now(),
         }
     }
 
@@ -204,22 +197,26 @@ impl Grid {
         new_vec_index
     }
 
-    fn apply_force(&self, particle: &mut Particle) {
-        for force in self.forces.iter() {
-            if self.frame < force.until_frame {
-                return force.apply(particle);
-            }
+    fn update_spot(&mut self, vec_index: usize, spot_index: usize) {
+        let mut particle = self.possibility_spots[vec_index].swap_remove(spot_index);
+
+        if let Some(force_handler) = &mut self.force_handler {
+            force_handler.apply(&mut particle);
         }
+
+        let new_vec_index = self.update_particle(&mut particle);
+
+        if new_vec_index != vec_index {
+            particle.queue_frame = self.frame;
+        }
+
+        self.possibility_spots[new_vec_index].push(particle);
     }
 
     /**
      * returns true if index needs to be incremented
      */
-    pub fn handle_particle(&mut self, vec_index: usize, spot_index: usize) {
-        let mut particle = self.possibility_spots[vec_index].swap_remove(spot_index);
-
-        self.apply_force(&mut particle);
-
+    fn update_particle(&mut self, particle: &mut Particle) -> usize {
         let new_x = particle.x + particle.vx;
         let new_y = particle.y + particle.vy;
         let end_new_x = new_x + particle.diameter;
@@ -229,7 +226,7 @@ impl Grid {
         let y_out_of_bounds = new_y < 0. || self.position.height <= end_new_y;
 
         // Inverse direction.
-        let elasticity_force = -1. * particle.elasticity_fraction;
+        let elasticity_force = -1. * particle.elasticity;
 
         if x_out_of_bounds {
             particle.vx *= elasticity_force;
@@ -239,6 +236,7 @@ impl Grid {
             particle.vy *= elasticity_force;
         }
 
+        particle.apply_friction();
         particle.animate();
 
         let mut data = CollisionData {
@@ -248,16 +246,12 @@ impl Grid {
             end_new_y,
         };
 
-        let new_vec_index = self.handle_collision(&mut particle, &mut data);
+        let new_vec_index = self.handle_collision(particle, &mut data);
 
         particle.transform(self.position.width, self.position.height);
         particle.draw(&self.position);
 
-        if vec_index != new_vec_index {
-            particle.queue_frame = self.frame;
-        }
-
-        self.possibility_spots[new_vec_index].push(particle);
+        new_vec_index
     }
 
     pub fn fill(&mut self, attributes: &ParticleAttributes, count: u32, fill_style: FillStyle) {
@@ -274,7 +268,13 @@ impl Grid {
     }
 
     pub fn draw(&mut self) {
-        let start = Instant::now();
+        let calculate_performance = self.frame % 50 == 0;
+
+        let start = if calculate_performance {
+            self.lifetime.elapsed().as_micros()
+        } else {
+            0
+        };
 
         for i in (0..self.emitters.len()).rev() {
             let mut emitter = self.emitters.swap_remove(i);
@@ -285,27 +285,26 @@ impl Grid {
             }
         }
 
+        if let Some(force_handler) = &mut self.force_handler {
+            force_handler.update(&self.lifetime);
+        }
+
         for vec_index in 0..self.possibility_spots.len() {
             for spot_index in (0..self.possibility_spots[vec_index].len()).rev() {
-                let mut particle = &mut self.possibility_spots[vec_index][spot_index];
-                if particle.queue_frame == self.frame {
-                    particle.queue_frame = u32::MAX; // remove queue frame.
+                if self.possibility_spots[vec_index][spot_index].queue_frame == self.frame {
                     continue;
                 }
 
-                self.handle_particle(vec_index, spot_index);
+                self.update_spot(vec_index, spot_index);
             }
         }
 
-        if self.frame % 50 == 0 {
-            self.duration = start.elapsed().as_micros();
+        if calculate_performance {
+            let end = self.lifetime.elapsed().as_micros();
+            self.duration = end - start;
         }
 
-        if self.frame + 1 < self.until_frame {
-            self.frame += 1;
-        } else {
-            self.frame = 0;
-        }
+        self.frame += 1;
     }
 
     pub fn draw_ui(&self) {
@@ -423,7 +422,7 @@ mod test {
             possibility_y_count: 10,
             possibility_side_length: 10,
             position: Position::new(1., 2.),
-            forces: Vec::new(),
+            force_handler: Vec::new(),
         };
 
         Grid::new(options)
@@ -432,9 +431,9 @@ mod test {
     fn default_attributes() -> ParticleAttributes {
         ParticleAttributes {
             color: Color::from_rgba(20, 20, 200, 255),
-            friction: 0.5,
+            friction_coefficient: 0.5,
             diameter: 5.,
-            elasticity_fraction: 0.9,
+            elasticity: 0.9,
             mass: 1.,
             animation_start_at: InitAnimation::Zero,
         }
@@ -537,7 +536,7 @@ mod test {
         assert_eq!(5., particle.diameter);
         assert_eq!(2.5, particle.radius);
         assert_eq!(0.5, particle.friction);
-        assert_eq!(0.9, particle.elasticity_fraction);
+        assert_eq!(0.9, particle.elasticity);
         assert_eq!(1., particle.mass);
     }
 
@@ -578,7 +577,7 @@ mod test {
             possibility_y_count: 10,
             possibility_side_length: 10,
             position: Position::new(1., 2.),
-            forces,
+            force_handler: forces,
         };
 
         let mut grid = Grid::new(options);

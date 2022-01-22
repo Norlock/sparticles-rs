@@ -7,6 +7,6 @@ TODO pass transform struct instead of trying to modify particles everywhere.
 - [x] move particle away if on top of each other.
 - [x] Particle emitters
 - [x] Friction on emitters.
-- [ ] Friction on collision partilces?
+- [ ] Friction on collision particles
 - [ ] Boid behaviour
-- [ ] Better color animation.
+- [x] Better color animation.

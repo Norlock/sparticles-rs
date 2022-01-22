@@ -2,7 +2,6 @@ use crate::animation::AnimationData;
 use crate::animation_handler::AnimationHandler;
 use crate::animation_handler::AnimationOptions;
 use crate::collision::CollisionData;
-use macroquad::miniquad::gl::UINT32_MAX;
 use macroquad::prelude::draw_circle;
 use macroquad::prelude::Color;
 
@@ -10,7 +9,7 @@ use crate::position::Position;
 
 #[derive(Debug)]
 pub struct Particle {
-    pub queue_frame: u32,
+    pub queue_frame: u64,
     pub x: f32,
     pub y: f32,
     pub vx: f32,
@@ -19,18 +18,18 @@ pub struct Particle {
     pub diameter: f32,
     pub color: Color,
     pub mass: f32,
-    /// number between 1 and 0. (percentage of bounciness).
-    pub elasticity_fraction: f32,
-    /// number in Newton (m * g).
-    pub friction: f32,
+    /// number between 0 and 1.
+    pub elasticity: f32,
+    /// number between 0 and 1. E.g. 0.008
+    pub friction_coefficient: f32,
     pub animation_handler: Option<AnimationHandler>,
 }
 
 pub struct ParticleAttributes {
-    /// number between 1 and 0. (percentage of bounciness).
-    pub elasticity_fraction: f32,
-    /// number in Newton (m * g).
-    pub friction: f32,
+    /// number between 0 and 1. (percentage of bounciness).
+    pub elasticity: f32,
+    /// number between 0 and 1. E.g. 0.008
+    pub friction_coefficient: f32,
 
     pub color: Color,
     pub mass: f32,
@@ -47,13 +46,13 @@ impl Particle {
             y,
             vx: 0.,
             vy: 0.,
-            friction: attributes.friction,
+            friction_coefficient: attributes.friction_coefficient,
             color: attributes.color.clone(),
             radius: attributes.diameter / 2.,
             diameter: attributes.diameter,
-            elasticity_fraction: attributes.elasticity_fraction,
+            elasticity: attributes.elasticity,
             mass: attributes.mass,
-            queue_frame: UINT32_MAX,
+            queue_frame: u64::MAX,
             animation_handler,
         }
     }
@@ -148,12 +147,12 @@ impl Particle {
 
         if self.mass == other.mass {
             let tmp = self.vx;
-            self.vx = other.vx * self.elasticity_fraction;
-            other.vx = tmp * other.elasticity_fraction;
+            self.vx = other.vx * self.elasticity;
+            other.vx = tmp * other.elasticity;
 
             let tmp = self.vy;
-            self.vy = other.vy * self.elasticity_fraction;
-            other.vy = tmp * other.elasticity_fraction;
+            self.vy = other.vy * self.elasticity;
+            other.vy = tmp * other.elasticity;
             self.move_if_overlaps(other);
             return true;
         }
@@ -165,16 +164,16 @@ impl Particle {
         let other_vx = (2. * self.mass / total_weight * self.vx)
             + ((other.mass - self.mass) / total_weight * other.vx);
 
-        self.vx = transform_vx * self.elasticity_fraction;
-        other.vx = other_vx * other.elasticity_fraction;
+        self.vx = transform_vx * self.elasticity;
+        other.vx = other_vx * other.elasticity;
 
         let transform_vy = ((self.mass - other.mass) / total_weight * self.vy)
             + (2. * other.mass / total_weight * other.vy);
         let other_vy = (2. * self.mass / total_weight * self.vy)
             + ((other.mass - self.mass) / total_weight * other.vy);
 
-        self.vy = transform_vy * self.elasticity_fraction;
-        other.vx = other_vy * other.elasticity_fraction;
+        self.vy = transform_vy * self.elasticity;
+        other.vx = other_vy * other.elasticity;
 
         self.move_if_overlaps(other);
         return true;
@@ -206,6 +205,14 @@ impl Particle {
             self.radius,
             self.color,
         );
+    }
+
+    pub fn apply_friction(&mut self) {
+        let x_loss = self.vx * self.mass * self.friction_coefficient;
+        let y_loss = self.vy * self.mass * self.friction_coefficient;
+
+        self.vx -= x_loss / self.mass;
+        self.vy -= y_loss / self.mass;
     }
 
     pub fn transform(&mut self, max_width: f32, max_height: f32) {

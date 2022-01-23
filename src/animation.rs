@@ -14,6 +14,4 @@ impl Debug for dyn Animate {
 pub struct AnimationData {
     pub color: Color,
     pub radius: f32,
-    pub vx: f32,
-    pub vy: f32,
 }

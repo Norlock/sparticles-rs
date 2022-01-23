@@ -1,16 +1,17 @@
 use crate::boid_emitter::BoidEmitter;
 use crate::boid_emitter::Point;
+use crate::constant_force::ConstantForce;
 use crate::gravity_force::GravityForce;
 use crate::size_animation::SizeAnimation;
 use std::rc::Rc;
 use std::time::Duration;
 
+use crate::accelerating_force::AcceleratingForce;
 use crate::animation_handler::{AnimationOptions, StartAnimationAt};
 use crate::animator::Animator;
 use crate::color_animation::ColorAnimation;
 use crate::emitter::EmitterOptions;
 use crate::force_handler::ForceHandler;
-use crate::newton_force::NewtonForce;
 use crate::position::Position;
 use macroquad::prelude::*;
 
@@ -70,6 +71,26 @@ pub fn smoke() -> EmitterOptions {
         end_radius: 2.,
     });
 
+    let mut force_handler = ForceHandler::new(Duration::from_secs(4));
+
+    force_handler.add(Box::new(ConstantForce {
+        from_ms: 0,
+        until_ms: 4000,
+        nx: 0.021,
+        ny: 0.02,
+        max_vx: 2.,
+        max_vy: 2.,
+    }));
+
+    force_handler.add(Box::new(ConstantForce {
+        from_ms: 2000,
+        until_ms: 2700,
+        nx: 0.,
+        ny: -0.03,
+        max_vx: 0.,
+        max_vy: -2.,
+    }));
+
     EmitterOptions {
         emitter_position: Position::new(300., 300.),
         emitter_diameter: 100.,
@@ -82,11 +103,12 @@ pub fn smoke() -> EmitterOptions {
         particles_per_emission: 200,
         particle_lifetime: Duration::from_secs(2),
         particle_radius: 5.,
-        particle_mass: 10.,
-        particle_force: 22.,
+        particle_mass: 1.,
+        particle_speed: 2.2,
         particle_friction_coefficient: 0.01,
         respect_grid_bounds: true,
         animations: vec![color_animation, size_animation],
+        force_handler: Some(force_handler),
     }
 }
 
@@ -112,9 +134,10 @@ pub fn another_emitter() -> EmitterOptions {
         particle_radius: 3.,
         particle_mass: 1.,
         particle_friction_coefficient: 0.008,
-        particle_force: 2.5,
+        particle_speed: 2.5,
         respect_grid_bounds: true,
         animations: vec![Box::new(color_animation)],
+        force_handler: None,
     }
     //EmitterOptions {
     //emitter_position: Position::new(500., 500.),
@@ -136,7 +159,7 @@ pub fn another_emitter() -> EmitterOptions {
 pub fn shimmer_forces() -> Option<ForceHandler> {
     let mut force_handler = ForceHandler::new(Duration::from_secs(6));
 
-    force_handler.add(Box::new(NewtonForce {
+    force_handler.add(Box::new(AcceleratingForce {
         from_ms: 0,
         until_ms: 1000,
         nx: 0.11,
@@ -145,7 +168,7 @@ pub fn shimmer_forces() -> Option<ForceHandler> {
         max_vy: 2.,
     }));
 
-    force_handler.add(Box::new(NewtonForce {
+    force_handler.add(Box::new(AcceleratingForce {
         from_ms: 3_000,
         until_ms: 4_000,
         nx: -0.1,
@@ -174,14 +197,23 @@ pub fn shimmer_forces() -> Option<ForceHandler> {
 
     force_handler.add(Box::new(GravityForce {
         from_ms: 0,
-        until_ms: u128::MAX,
-        center_x: 500.,
-        center_y: 500.,
-        gravitation_force_n: 0.3,
-        dead_zone: 20.,
+        until_ms: 2000,
+        center_x: 900.,
+        center_y: 100.,
+        gravitation_force: 0.5,
+        dead_zone: 30.,
         mass: 1000.,
     }));
 
+    force_handler.add(Box::new(GravityForce {
+        from_ms: 0,
+        until_ms: 2000,
+        center_x: 100.,
+        center_y: 900.,
+        gravitation_force: 0.5,
+        dead_zone: 30.,
+        mass: 1000.,
+    }));
     //force_handler.add(Box::new(GravityForce {
     //from_ms: 1500,
     //until_ms: 1700,

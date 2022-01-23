@@ -1,11 +1,11 @@
 use std::time::Instant;
 
 use crate::{
-    animation_handler,
     collision::CollisionData,
     emitter::{Emitter, EmitterOptions},
     fill_style::FillStyle,
-    force_handler::{self, ForceHandler},
+    force::ForceData,
+    force_handler::ForceHandler,
     particle::{Particle, ParticleAttributes},
     position::Position,
 };
@@ -200,9 +200,21 @@ impl Grid {
     fn update_spot(&mut self, vec_index: usize, spot_index: usize) {
         let mut particle = self.possibility_spots[vec_index].swap_remove(spot_index);
 
+        let mut data = ForceData {
+            x: particle.x,
+            y: particle.y,
+            vx: particle.vx,
+            vy: particle.vy,
+            radius: particle.radius,
+            mass: particle.mass,
+        };
+
         if let Some(force_handler) = &mut self.force_handler {
-            force_handler.apply(&mut particle);
+            force_handler.apply(&mut data);
         }
+
+        particle.vx = data.vx;
+        particle.vy = data.vy;
 
         let new_vec_index = self.update_particle(&mut particle);
 

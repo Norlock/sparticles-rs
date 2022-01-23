@@ -1,3 +1,8 @@
+use crate::{
+    force::ForceData,
+    force_handler::{self, ForceHandler},
+    Force,
+};
 use macroquad::prelude::*;
 use std::time::{Duration, Instant};
 
@@ -20,11 +25,12 @@ pub struct EmitterOptions {
     pub particle_radius: f32,
     pub particle_mass: f32,
     /// Newton force
-    pub particle_force: f32,
+    pub particle_speed: f32,
     /// number between 0 and 1, e.g. 0.001
     pub particle_friction_coefficient: f32,
     pub respect_grid_bounds: bool,
     pub animations: Vec<Box<dyn Animate>>,
+    pub force_handler: Option<ForceHandler>,
 }
 
 #[derive(Debug)]
@@ -41,18 +47,19 @@ pub struct Emitter {
     diffusion_degrees: f32,
     particle_color: Color,
     particles_per_emission: u32,
-    ms_delay_between_emission: u128,
+    delay_between_emission_ms: u128,
     emission_distortion: f32,
     current_emission: i32,
     particle_lifetime: Duration,
     particle_radius: f32,
     particle_mass: f32,
-    particle_force: f32,
+    particle_speed: f32,
     particle_friction_coefficient: f32,
     particles: Vec<EmittedParticle>,
     lifetime: Instant,
     emitter_duration: Duration,
     animations: Vec<Box<dyn Animate>>,
+    force_handler: Option<ForceHandler>,
     pub delete: bool,
 }
 
@@ -60,8 +67,8 @@ pub struct Emitter {
 struct EmittedParticle {
     x: f32,
     y: f32,
-    x_force: f32,
-    y_force: f32,
+    vx: f32,
+    vy: f32,
     radius: f32,
     lifetime: Instant,
     color: Color,
@@ -97,11 +104,12 @@ impl Emitter {
             emitter_duration: options.emitter_duration,
             lifetime: Instant::now(),
             current_emission: -1,
-            ms_delay_between_emission: options.delay_between_emission.as_millis(),
+            delay_between_emission_ms: options.delay_between_emission.as_millis(),
             respect_grid_bounds: options.respect_grid_bounds,
             particle_friction_coefficient: options.particle_friction_coefficient,
-            particle_force: options.particle_force,
+            particle_speed: options.particle_speed,
             animations: options.animations,
+            force_handler: options.force_handler,
             delete: false,
         }
     }
@@ -109,7 +117,7 @@ impl Emitter {
     pub fn emit(&mut self) {
         let elapsed = self.lifetime.elapsed();
         let time_elapsed = elapsed > self.emitter_duration;
-        let new_emission = (elapsed.as_millis() / self.ms_delay_between_emission) as i32;
+        let new_emission = (elapsed.as_millis() / self.delay_between_emission_ms) as i32;
 
         if !time_elapsed && self.current_emission < new_emission {
             self.current_emission = new_emission;
@@ -118,24 +126,42 @@ impl Emitter {
             }
         }
 
+        if let Some(force_handler) = &mut self.force_handler {
+            force_handler.update(&self.lifetime);
+        }
+
         for i in (0..self.particles.len()).rev() {
             let mut particle = self.particles.swap_remove(i);
 
-            let x_friction = particle.x_force * self.particle_friction_coefficient;
-            let y_friction = particle.y_force * self.particle_friction_coefficient;
+            let x_force = particle.vx * self.particle_mass;
+            let y_force = particle.vy * self.particle_mass;
 
-            particle.x_force -= x_friction;
-            particle.y_force -= y_friction;
+            let x_friction = x_force * self.particle_friction_coefficient;
+            let y_friction = y_force * self.particle_friction_coefficient;
 
-            let vx = particle.x_force / self.particle_mass;
-            let vy = particle.y_force / self.particle_mass;
+            let vx = (x_force - x_friction) / self.particle_mass;
+            let vy = (y_force - y_friction) / self.particle_mass;
 
-            particle.x += vx;
-            particle.y += vy;
+            if let Some(force_handler) = &mut self.force_handler {
+                let mut data = ForceData {
+                    x: particle.x,
+                    y: particle.y,
+                    vx,
+                    vy,
+                    radius: self.particle_radius,
+                    mass: self.particle_mass,
+                };
+
+                force_handler.apply(&mut data);
+
+                particle.vx = data.vx;
+                particle.vy = data.vy;
+            } else {
+                particle.vx = vx;
+                particle.vy = vy;
+            }
 
             let mut data: AnimationData = AnimationData {
-                vx,
-                vy,
                 radius: particle.radius,
                 color: particle.color,
             };
@@ -144,6 +170,8 @@ impl Emitter {
                 animator.animate(&mut data, particle.lifetime.elapsed().as_millis());
             }
 
+            particle.x += vx;
+            particle.y += vy;
             particle.color = data.color;
             particle.radius = data.radius;
 
@@ -180,15 +208,15 @@ impl Emitter {
             rand::gen_range(-self.diffusion_degrees, self.diffusion_degrees).to_radians();
 
         let angle = self.angle_emission_radians + diffusion_delta;
-        let x_force = self.particle_force * angle.cos();
-        let y_force = self.particle_force * angle.sin();
+        let vx = self.particle_speed * angle.cos();
+        let vy = self.particle_speed * angle.sin();
 
         EmittedParticle {
             x,
             y,
             lifetime: Instant::now(),
-            x_force,
-            y_force,
+            vx,
+            vy,
             radius: self.particle_radius,
             color: self.particle_color,
         }

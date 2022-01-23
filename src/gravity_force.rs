@@ -1,10 +1,11 @@
-use crate::force::Force;
+use crate::force::{Force, ForceData};
 use crate::particle::Particle;
 
 pub struct GravityForce {
     pub center_x: f32,
     pub center_y: f32,
-    pub gravitation_force_n: f32,
+    /// In newton
+    pub gravitation_force: f32,
     /// Use to exclude extreme gravitational pulls, e.g. 20.
     pub dead_zone: f32,
     pub mass: f32,
@@ -14,13 +15,13 @@ pub struct GravityForce {
 
 impl Force for GravityForce {
     // Based on newton's law of universal gravity.
-    fn apply(&self, particle: &mut Particle, force_cycle_ms: u128) {
+    fn apply(&self, particle: &mut ForceData, force_cycle_ms: u128) {
         if force_cycle_ms < self.from_ms || self.until_ms <= force_cycle_ms {
             return;
         }
 
-        let particle_center_x = particle.x + particle.diameter / 2.;
-        let particle_center_y = particle.y + particle.diameter / 2.;
+        let particle_center_x = particle.x + particle.radius;
+        let particle_center_y = particle.y + particle.radius;
         let x_distance = self.center_x - particle_center_x;
         let y_distance = self.center_y - particle_center_y;
 
@@ -32,7 +33,7 @@ impl Force for GravityForce {
         let y_distance_pow = y_distance.powi(2);
         let distance_pow = x_distance_pow + y_distance_pow;
 
-        let top_formula = self.gravitation_force_n * self.mass * particle.mass;
+        let top_formula = self.gravitation_force * self.mass * particle.mass;
         let force = top_formula / distance_pow;
 
         let x_percentage = x_distance_pow / distance_pow;

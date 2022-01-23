@@ -184,8 +184,6 @@ impl Particle {
             let mut data = AnimationData {
                 color: self.color,
                 radius: self.radius,
-                vx: self.vx,
-                vy: self.vy,
             };
 
             animator.animate(&mut data);
@@ -193,8 +191,6 @@ impl Particle {
             self.color = data.color;
             self.radius = data.radius;
             self.diameter = data.radius * 2.;
-            self.vx = data.vx;
-            self.vy = data.vy;
         }
     }
 

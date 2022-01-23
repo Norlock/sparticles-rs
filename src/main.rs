@@ -1,11 +1,13 @@
 #![allow(dead_code)]
 
+mod accelerating_force;
 mod animation;
 mod animation_handler;
 mod animator;
 mod boid_emitter;
 mod collision;
 mod color_animation;
+mod constant_force;
 mod container;
 mod emitter;
 mod fill_style;
@@ -14,7 +16,6 @@ mod force_handler;
 mod forcer;
 mod gravity_force;
 mod grid;
-mod newton_force;
 mod particle;
 mod pattern;
 mod position;

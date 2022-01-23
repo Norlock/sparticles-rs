@@ -1,4 +1,4 @@
-use crate::particle::Particle;
+use crate::force::ForceData;
 use crate::Force;
 use std::time::Duration;
 use std::time::Instant;
@@ -25,7 +25,7 @@ impl ForceHandler {
         self.forces.push(force);
     }
 
-    pub fn apply(&self, particle: &mut Particle) {
+    pub fn apply(&self, particle: &mut ForceData) {
         for force in self.forces.iter() {
             force.apply(particle, self.elapsed_time_ms);
         }

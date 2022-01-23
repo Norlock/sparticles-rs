@@ -10,3 +10,4 @@ TODO pass transform struct instead of trying to modify particles everywhere.
 - [x] Friction on collision particles
 - [ ] Boid behaviour
 - [x] Better color animation.
+- [ ] Apply gravity on particles.

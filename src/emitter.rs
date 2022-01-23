@@ -133,12 +133,10 @@ impl Emitter {
             particle.x += vx;
             particle.y += vy;
 
-            let diameter = particle.radius * 2.;
-
             let mut data: AnimationData = AnimationData {
                 vx,
                 vy,
-                radius: diameter,
+                radius: particle.radius,
                 color: particle.color,
             };
 
@@ -147,8 +145,11 @@ impl Emitter {
             }
 
             particle.color = data.color;
+            particle.radius = data.radius;
 
             draw_circle(particle.x, particle.y, particle.radius, particle.color);
+
+            let diameter = particle.radius * 2.;
 
             if self.respect_grid_bounds
                 && (particle.x < self.grid_position.x

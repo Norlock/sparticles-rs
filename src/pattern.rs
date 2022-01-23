@@ -1,3 +1,7 @@
+use crate::boid_emitter::BoidEmitter;
+use crate::boid_emitter::Point;
+use crate::gravity_force::GravityForce;
+use crate::size_animation::SizeAnimation;
 use std::rc::Rc;
 use std::time::Duration;
 
@@ -20,13 +24,13 @@ pub fn shimmer_animations() -> AnimationOptions {
         color1: Color::from_rgba(255, 255, 255, 255),
         color2: Color::from_rgba(255, 255, 255, 0),
         from_ms: 0,
-        until_ms: 800,
+        until_ms: 1000,
     }));
 
     animator.add(Box::new(ColorAnimation {
         color1: Color::from_rgba(255, 255, 255, 0),
         color2: Color::from_rgba(255, 255, 255, 255),
-        from_ms: 800,
+        from_ms: 1000,
         until_ms: 2000,
     }));
 
@@ -46,21 +50,28 @@ pub fn shimmer_animations() -> AnimationOptions {
 
     AnimationOptions {
         animator: Rc::new(animator),
-        //start_at: StartAnimationAt::RangeMs(0, 500),
-        start_at: StartAnimationAt::Zero,
+        start_at: StartAnimationAt::RangeMs(0, 1000),
+        //start_at: StartAnimationAt::Zero,
     }
 }
 
 pub fn smoke() -> EmitterOptions {
-    let color_animation = ColorAnimation {
+    let color_animation = Box::new(ColorAnimation {
         color1: Color::from_rgba(200, 100, 1, 255),
         color2: Color::from_rgba(145, 42, 245, 255),
         from_ms: 0,
-        until_ms: 2500,
-    };
+        until_ms: 2000,
+    });
+
+    let size_animation = Box::new(SizeAnimation {
+        from_ms: 0,
+        until_ms: 1000,
+        start_radius: 5.,
+        end_radius: 2.,
+    });
 
     EmitterOptions {
-        emitter_position: Position::new(200., 200.),
+        emitter_position: Position::new(300., 300.),
         emitter_diameter: 100.,
         emitter_duration: Duration::from_secs(10),
         angle_degrees: 135.,
@@ -70,12 +81,12 @@ pub fn smoke() -> EmitterOptions {
         particle_color: Color::from_rgba(200, 100, 1, 255),
         particles_per_emission: 200,
         particle_lifetime: Duration::from_secs(2),
-        particle_radius: 6.,
+        particle_radius: 5.,
         particle_mass: 10.,
         particle_force: 22.,
         particle_friction_coefficient: 0.01,
         respect_grid_bounds: true,
-        animations: vec![Box::new(color_animation)],
+        animations: vec![color_animation, size_animation],
     }
 }
 
@@ -125,40 +136,65 @@ pub fn another_emitter() -> EmitterOptions {
 pub fn shimmer_forces() -> Option<ForceHandler> {
     let mut force_handler = ForceHandler::new(Duration::from_secs(4));
 
-    force_handler.add(Box::new(NewtonForce {
+    //force_handler.add(Box::new(NewtonForce {
+    //from_ms: 0,
+    //until_ms: 1000,
+    //nx: 3.1,
+    //ny: 3.,
+    //max_x: 3.,
+    //max_y: 3.,
+    //}));
+
+    //force_handler.add(Box::new(NewtonForce {
+    //from_ms: 2000,
+    //until_ms: 3000,
+    //nx: -3.,
+    //ny: -3.1,
+    //max_x: -3.,
+    //max_y: -3.,
+    //}));
+
+    //force_handler.add(Box::new(NewtonForce {
+    //from_ms: 3000,
+    //until_ms: 3500,
+    //nx: 1.1,
+    //ny: -1.,
+    //max_x: -3.,
+    //max_y: -3.,
+    //}));
+
+    //force_handler.add(Box::new(NewtonForce {
+    //from_ms: 3500,
+    //until_ms: 4000,
+    //nx: -1.,
+    //ny: 1.1,
+    //max_x: -3.,
+    //max_y: -3.,
+    //}));
+
+    force_handler.add(Box::new(GravityForce {
         from_ms: 0,
-        until_ms: 1000,
-        nx: 1.,
-        ny: 1.,
-        max_x: 3.,
-        max_y: 3.,
-    }));
-
-    force_handler.add(Box::new(NewtonForce {
-        from_ms: 2000,
-        until_ms: 3000,
-        nx: -1.,
-        ny: -1.,
-        max_x: -3.,
-        max_y: -3.,
-    }));
-
-    force_handler.add(Box::new(NewtonForce {
-        from_ms: 3000,
-        until_ms: 3500,
-        nx: 1.,
-        ny: -1.,
-        max_x: -3.,
-        max_y: -3.,
-    }));
-
-    force_handler.add(Box::new(NewtonForce {
-        from_ms: 3500,
         until_ms: 4000,
-        nx: -1.,
-        ny: 1.,
-        max_x: -3.,
-        max_y: -3.,
+        center_x: 500.,
+        center_y: 500.,
+        gravitation_force_n: 0.1,
+        dead_zone: 20.,
+        mass: 1000.,
     }));
+
     Some(force_handler)
+}
+
+pub fn boid() {
+    let flight_pattern = vec![Point(100., 400.), Point(400., 400.), Point(100., 100.)];
+    let emitter = BoidEmitter {
+        boid_speed: 1.,
+        boid_count: 100,
+        boid_color: Color::from_rgba(0, 255, 0, 255),
+        boid_radius: 5.,
+        emission_delay_ms: 10,
+        diffusion: 0.,
+        flight_pattern,
+        boids: Vec::new(),
+    };
 }

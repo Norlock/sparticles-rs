@@ -3,6 +3,7 @@
 mod animation;
 mod animation_handler;
 mod animator;
+mod boid_emitter;
 mod collision;
 mod color_animation;
 mod container;
@@ -11,6 +12,7 @@ mod fill_style;
 mod force;
 mod force_handler;
 mod forcer;
+mod gravity_force;
 mod grid;
 mod newton_force;
 mod particle;
@@ -32,8 +34,8 @@ async fn main() {
     let position = Position::new(100., 100.);
 
     let mut grid = Grid::new(GridOptions {
-        cell_x_count: 5,
-        cell_y_count: 5,
+        cell_x_count: 10,
+        cell_y_count: 10,
         possibility_x_count: 10,
         possibility_y_count: 10,
         possibility_side_length: 10,
@@ -41,27 +43,28 @@ async fn main() {
         force_handler: shimmer_forces(),
     });
 
+    //let attributes = ParticleAttributes {
+    //color: Color::from_rgba(0, 255, 255, 255),
+    //friction_coefficient: 0.005,
+    //diameter: 5.5,
+    //elasticity: 1.,
+    //mass: 3.8,
+    //animation_options: None,
+    //};
+
+    //grid.fill(&attributes, 500, FillStyle::WhiteNoise);
+
     let attributes = ParticleAttributes {
-        color: Color::from_rgba(0, 255, 255, 255),
-        friction_coefficient: 0.005,
-        diameter: 5.5,
+        color: Color::from_rgba(255, 255, 255, 255),
+        friction_coefficient: 0.001,
+        diameter: 6.,
         elasticity: 1.,
-        mass: 1.8,
+        mass: 1.5,
+        //animation_options: Some(shimmer_animations()),
         animation_options: None,
     };
 
     grid.fill(&attributes, 50, FillStyle::WhiteNoise);
-
-    //let attributes = ParticleAttributes {
-    //color: Color::from_rgba(255, 255, 255, 255),
-    //friction_coefficient: 0.001,
-    //diameter: 6.,
-    //elasticity: 1.,
-    //mass: 1.5,
-    //animation_options: Some(shimmer_animations()),
-    //};
-
-    //grid.fill(&attributes, 50, FillStyle::WhiteNoise);
 
     //let attributes = ParticleAttributes {
     //color: Color::from_rgba(255, 0, 0, 255),
@@ -72,7 +75,7 @@ async fn main() {
     //animation_options: None,
     //};
 
-    //grid.fill(&attributes, 50, FillStyle::WhiteNoise);
+    //grid.fill(&attributes, 1000, FillStyle::WhiteNoise);
 
     grid.add_emitter(smoke());
     //grid.add_emitter(another_emitter());

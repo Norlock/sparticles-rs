@@ -11,7 +11,7 @@ pub struct SizeAnimation {
 
 impl Animate for SizeAnimation {
     fn animate(&self, data: &mut AnimationData, anim_cycle_ms: u128) {
-        if anim_cycle_ms < self.from_ms || self.until_ms < anim_cycle_ms {
+        if anim_cycle_ms < self.from_ms || self.until_ms <= anim_cycle_ms {
             return;
         }
 

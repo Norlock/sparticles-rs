@@ -134,25 +134,25 @@ pub fn another_emitter() -> EmitterOptions {
 }
 
 pub fn shimmer_forces() -> Option<ForceHandler> {
-    let mut force_handler = ForceHandler::new(Duration::from_secs(4));
+    let mut force_handler = ForceHandler::new(Duration::from_secs(6));
 
-    //force_handler.add(Box::new(NewtonForce {
-    //from_ms: 0,
-    //until_ms: 1000,
-    //nx: 3.1,
-    //ny: 3.,
-    //max_x: 3.,
-    //max_y: 3.,
-    //}));
+    force_handler.add(Box::new(NewtonForce {
+        from_ms: 0,
+        until_ms: 1000,
+        nx: 0.11,
+        ny: 0.1,
+        max_vx: 2.,
+        max_vy: 2.,
+    }));
 
-    //force_handler.add(Box::new(NewtonForce {
-    //from_ms: 2000,
-    //until_ms: 3000,
-    //nx: -3.,
-    //ny: -3.1,
-    //max_x: -3.,
-    //max_y: -3.,
-    //}));
+    force_handler.add(Box::new(NewtonForce {
+        from_ms: 3_000,
+        until_ms: 4_000,
+        nx: -0.1,
+        ny: -0.11,
+        max_vx: -2.,
+        max_vy: -2.,
+    }));
 
     //force_handler.add(Box::new(NewtonForce {
     //from_ms: 3000,
@@ -174,14 +174,23 @@ pub fn shimmer_forces() -> Option<ForceHandler> {
 
     force_handler.add(Box::new(GravityForce {
         from_ms: 0,
-        until_ms: 4000,
+        until_ms: u128::MAX,
         center_x: 500.,
         center_y: 500.,
-        gravitation_force_n: 0.1,
+        gravitation_force_n: 0.3,
         dead_zone: 20.,
         mass: 1000.,
     }));
 
+    //force_handler.add(Box::new(GravityForce {
+    //from_ms: 1500,
+    //until_ms: 1700,
+    //center_x: 500.,
+    //center_y: 500.,
+    //gravitation_force_n: -1.,
+    //dead_zone: 20.,
+    //mass: 1000.,
+    //}));
     Some(force_handler)
 }
 

@@ -59,23 +59,23 @@ async fn main() {
         friction_coefficient: 0.001,
         diameter: 6.,
         elasticity: 1.,
-        mass: 1.5,
+        mass: 2.0,
         //animation_options: Some(shimmer_animations()),
         animation_options: None,
     };
 
     grid.fill(&attributes, 50, FillStyle::WhiteNoise);
 
-    //let attributes = ParticleAttributes {
-    //color: Color::from_rgba(255, 0, 0, 255),
-    //friction_coefficient: 0.008,
-    //diameter: 7.,
-    //elasticity: 1.,
-    //mass: 5.,
-    //animation_options: None,
-    //};
+    let attributes = ParticleAttributes {
+        color: Color::from_rgba(20, 255, 0, 255),
+        friction_coefficient: 0.008,
+        diameter: 7.,
+        elasticity: 1.,
+        mass: 3.,
+        animation_options: None,
+    };
 
-    //grid.fill(&attributes, 1000, FillStyle::WhiteNoise);
+    grid.fill(&attributes, 100, FillStyle::WhiteNoise);
 
     grid.add_emitter(smoke());
     //grid.add_emitter(another_emitter());

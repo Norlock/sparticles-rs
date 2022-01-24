@@ -120,6 +120,27 @@ pub fn another_emitter() -> EmitterOptions {
         until_ms: 700,
     };
 
+    let mut force_handler = ForceHandler::new(Duration::from_secs(10));
+    force_handler.add(Box::new(GravitationalForce {
+        from_ms: 0,
+        until_ms: 5000,
+        gravitation_force: -0.3,
+        dead_zone: 30.,
+        mass: 1000.,
+        start: Point(500., 500.),
+        end: Point(500., 900.),
+    }));
+
+    force_handler.add(Box::new(GravitationalForce {
+        from_ms: 5000,
+        until_ms: 10000,
+        gravitation_force: -0.4,
+        dead_zone: 30.,
+        mass: 1000.,
+        start: Point(500., 900.),
+        end: Point(500., 500.),
+    }));
+
     EmitterOptions {
         emitter_position: Position::new(300., 200.),
         emitter_diameter: 100.,
@@ -137,7 +158,7 @@ pub fn another_emitter() -> EmitterOptions {
         particle_speed: 2.5,
         respect_grid_bounds: true,
         animations: vec![Box::new(color_animation)],
-        force_handler: None,
+        force_handler: Some(force_handler),
     }
     //EmitterOptions {
     //emitter_position: Position::new(500., 500.),

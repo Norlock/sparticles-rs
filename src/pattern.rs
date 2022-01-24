@@ -1,8 +1,8 @@
-use crate::boid_emitter::BoidEmitter;
 use crate::constant_force::ConstantForce;
 use crate::gravitational_force::GravitationalForce;
 use crate::point::Point;
 use crate::size_animation::SizeAnimation;
+use crate::swarm_emitter::SwarmEmitter;
 use std::rc::Rc;
 use std::time::Duration;
 
@@ -127,8 +127,8 @@ pub fn another_emitter() -> EmitterOptions {
         gravitation_force: -0.3,
         dead_zone: 30.,
         mass: 1000.,
-        start: Point(500., 500.),
-        end: Point(500., 900.),
+        start: Point(400., 400.),
+        end: Point(400., 800.),
     }));
 
     force_handler.add(Box::new(GravitationalForce {
@@ -137,8 +137,8 @@ pub fn another_emitter() -> EmitterOptions {
         gravitation_force: -0.4,
         dead_zone: 30.,
         mass: 1000.,
-        start: Point(500., 900.),
-        end: Point(500., 500.),
+        start: Point(400., 800.),
+        end: Point(400., 400.),
     }));
 
     EmitterOptions {
@@ -160,21 +160,6 @@ pub fn another_emitter() -> EmitterOptions {
         animations: vec![Box::new(color_animation)],
         force_handler: Some(force_handler),
     }
-    //EmitterOptions {
-    //emitter_position: Position::new(500., 500.),
-    //emitter_diameter: 100.,
-    //emitter_duration: Duration::from_secs(10),
-    //angle_degrees: 135.,
-    //emission_distortion_px: 0.,
-    //frames_per_emission: 100,
-    //diffusion_degrees: 270.,
-    //particle_color: Color::from_rgba(20, 200, 200, 255),
-    //particles_per_emission: 50,
-    //particle_lifetime: Duration::from_secs(2),
-    //particle_radius: 3.,
-    //particle_speed: 1.,
-    //respect_grid_bounds: true,
-    //}
 }
 
 pub fn shimmer_forces() -> Option<ForceHandler> {
@@ -207,24 +192,6 @@ pub fn shimmer_forces() -> Option<ForceHandler> {
         max_vy: -2.,
     }));
 
-    //force_handler.add(Box::new(NewtonForce {
-    //from_ms: 3000,
-    //until_ms: 3500,
-    //nx: 1.1,
-    //ny: -1.,
-    //max_x: -3.,
-    //max_y: -3.,
-    //}));
-
-    //force_handler.add(Box::new(NewtonForce {
-    //from_ms: 3500,
-    //until_ms: 4000,
-    //nx: -1.,
-    //ny: 1.1,
-    //max_x: -3.,
-    //max_y: -3.,
-    //}));
-
     force_handler.add(Box::new(GravitationalForce {
         from_ms: 0,
         until_ms: 6000,
@@ -244,28 +211,20 @@ pub fn shimmer_forces() -> Option<ForceHandler> {
         start: Point(100., 900.),
         end: Point(100., 900.),
     }));
-    //force_handler.add(Box::new(GravityForce {
-    //from_ms: 1500,
-    //until_ms: 1700,
-    //center_x: 500.,
-    //center_y: 500.,
-    //gravitation_force_n: -1.,
-    //dead_zone: 20.,
-    //mass: 1000.,
-    //}));
+
     Some(force_handler)
 }
 
 pub fn boid() {
     let flight_pattern = vec![Point(100., 400.), Point(400., 400.), Point(100., 100.)];
-    let emitter = BoidEmitter {
-        boid_speed: 1.,
-        boid_count: 100,
-        boid_color: Color::from_rgba(0, 255, 0, 255),
-        boid_radius: 5.,
-        emission_delay_ms: 10,
-        diffusion: 0.,
-        flight_pattern,
-        boids: Vec::new(),
-    };
+    //let emitter = SwarmEmitter {
+    //boid_speed: 1.,
+    //boid_count: 100,
+    //boid_color: Color::from_rgba(0, 255, 0, 255),
+    //boid_radius: 5.,
+    //emission_delay_ms: 10,
+    //diffusion: 0.,
+    //flight_pattern,
+    //boids: Vec::new(),
+    //};
 }

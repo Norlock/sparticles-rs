@@ -4,7 +4,6 @@ mod accelerating_force;
 mod animation;
 mod animation_handler;
 mod animator;
-mod boid_emitter;
 mod collision;
 mod color_animation;
 mod constant_force;
@@ -21,6 +20,7 @@ mod pattern;
 mod point;
 mod position;
 mod size_animation;
+mod swarm_emitter;
 
 use grid::{Grid, GridOptions};
 

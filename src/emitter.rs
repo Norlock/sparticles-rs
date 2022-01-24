@@ -1,8 +1,4 @@
-use crate::{
-    force::ForceData,
-    force_handler::{self, ForceHandler},
-    Force,
-};
+use crate::{force::ForceData, force_handler::ForceHandler};
 use macroquad::prelude::*;
 use std::time::{Duration, Instant};
 
@@ -38,8 +34,6 @@ pub struct Emitter {
     emitter_diameter: f32,
     x: f32,
     y: f32,
-    end_x: f32,
-    end_y: f32,
     grid_position: Position,
     respect_grid_bounds: bool,
     angle_radians: f32,
@@ -79,10 +73,8 @@ impl Emitter {
         let angle_radians = options.angle_degrees.to_radians();
         let inverse_radians = (-90. as f32).to_radians(); // 0 deg will be emitting above
         let angle_emission_radians = angle_radians + inverse_radians;
-        let x = options.emitter_position.x + grid_position.x;
-        let y = options.emitter_position.y + grid_position.y;
-        let end_x = grid_position.x + grid_position.width;
-        let end_y = grid_position.y + grid_position.height;
+        let x = options.emitter_position.x;
+        let y = options.emitter_position.y;
 
         Self {
             particles_per_emission: options.particles_per_emission,
@@ -93,8 +85,6 @@ impl Emitter {
             particle_radius: options.particle_radius,
             x,
             y,
-            end_x,
-            end_y,
             grid_position: grid_position.clone(),
             angle_radians,
             angle_emission_radians,
@@ -175,15 +165,20 @@ impl Emitter {
             particle.color = anim_data.color;
             particle.radius = anim_data.radius;
 
-            draw_circle(particle.x, particle.y, particle.radius, particle.color);
+            draw_circle(
+                particle.x + self.grid_position.x,
+                particle.y + self.grid_position.y,
+                particle.radius,
+                particle.color,
+            );
 
             let diameter = particle.radius * 2.;
 
             if self.respect_grid_bounds
-                && (particle.x < self.grid_position.x
-                    || self.end_x < particle.x + diameter
-                    || particle.y < self.grid_position.y
-                    || self.end_y < particle.y + diameter)
+                && (particle.x < 0.
+                    || self.grid_position.width < particle.x + diameter
+                    || particle.y < 0.
+                    || self.grid_position.height < particle.y + diameter)
             {
                 continue; // removes particle.
             }

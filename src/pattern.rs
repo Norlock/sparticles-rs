@@ -1,7 +1,7 @@
 use crate::boid_emitter::BoidEmitter;
-use crate::boid_emitter::Point;
 use crate::constant_force::ConstantForce;
-use crate::gravity_force::GravityForce;
+use crate::gravitational_force::GravitationalForce;
+use crate::point::Point;
 use crate::size_animation::SizeAnimation;
 use std::rc::Rc;
 use std::time::Duration;
@@ -126,7 +126,7 @@ pub fn another_emitter() -> EmitterOptions {
         emitter_duration: Duration::from_secs(10),
         angle_degrees: 135.,
         emission_distortion_px: 0.,
-        delay_between_emission: Duration::from_secs(1),
+        delay_between_emission: Duration::from_millis(100),
         diffusion_degrees: 45.,
         particle_color: Color::from_rgba(2, 200, 1, 255),
         particles_per_emission: 100,
@@ -169,6 +169,15 @@ pub fn shimmer_forces() -> Option<ForceHandler> {
     }));
 
     force_handler.add(Box::new(AcceleratingForce {
+        from_ms: 2_000,
+        until_ms: 3_000,
+        nx: 0.1,
+        ny: -0.11,
+        max_vx: -2.,
+        max_vy: -2.,
+    }));
+
+    force_handler.add(Box::new(AcceleratingForce {
         from_ms: 3_000,
         until_ms: 4_000,
         nx: -0.1,
@@ -195,24 +204,24 @@ pub fn shimmer_forces() -> Option<ForceHandler> {
     //max_y: -3.,
     //}));
 
-    force_handler.add(Box::new(GravityForce {
+    force_handler.add(Box::new(GravitationalForce {
         from_ms: 0,
-        until_ms: 2000,
-        center_x: 900.,
-        center_y: 100.,
+        until_ms: 6000,
         gravitation_force: 0.5,
         dead_zone: 30.,
         mass: 1000.,
+        start: Point(200., 200.),
+        end: Point(1000., 1000.),
     }));
 
-    force_handler.add(Box::new(GravityForce {
+    force_handler.add(Box::new(GravitationalForce {
         from_ms: 0,
-        until_ms: 2000,
-        center_x: 100.,
-        center_y: 900.,
-        gravitation_force: 0.5,
-        dead_zone: 30.,
+        until_ms: 6000,
+        gravitation_force: 0.4,
+        dead_zone: 20.,
         mass: 1000.,
+        start: Point(100., 900.),
+        end: Point(100., 900.),
     }));
     //force_handler.add(Box::new(GravityForce {
     //from_ms: 1500,

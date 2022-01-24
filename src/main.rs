@@ -14,10 +14,11 @@ mod fill_style;
 mod force;
 mod force_handler;
 mod forcer;
-mod gravity_force;
+mod gravitational_force;
 mod grid;
 mod particle;
 mod pattern;
+mod point;
 mod position;
 mod size_animation;
 
@@ -78,8 +79,8 @@ async fn main() {
 
     grid.fill(&attributes, 100, FillStyle::WhiteNoise);
 
-    grid.add_emitter(smoke());
-    //grid.add_emitter(another_emitter());
+    //grid.add_emitter(smoke());
+    grid.add_emitter(another_emitter());
 
     loop {
         clear_background(BLACK);

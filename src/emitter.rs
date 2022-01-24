@@ -161,19 +161,19 @@ impl Emitter {
                 particle.vy = vy;
             }
 
-            let mut data: AnimationData = AnimationData {
+            let mut anim_data: AnimationData = AnimationData {
                 radius: particle.radius,
                 color: particle.color,
             };
 
             for animator in self.animations.iter() {
-                animator.animate(&mut data, particle.lifetime.elapsed().as_millis());
+                animator.animate(&mut anim_data, particle.lifetime.elapsed().as_millis());
             }
 
             particle.x += vx;
             particle.y += vy;
-            particle.color = data.color;
-            particle.radius = data.radius;
+            particle.color = anim_data.color;
+            particle.radius = anim_data.radius;
 
             draw_circle(particle.x, particle.y, particle.radius, particle.color);
 

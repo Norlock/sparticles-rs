@@ -1,9 +1,9 @@
-use crate::force::{Force, ForceData};
-use crate::particle::Particle;
+use macroquad::prelude::{draw_circle, Color};
 
-pub struct GravityForce {
-    pub center_x: f32,
-    pub center_y: f32,
+use crate::force::{Force, ForceData};
+use crate::point::Point;
+
+pub struct GravitationalForce {
     /// In newton
     pub gravitation_force: f32,
     /// Use to exclude extreme gravitational pulls, e.g. 20.
@@ -11,19 +11,37 @@ pub struct GravityForce {
     pub mass: f32,
     pub from_ms: u128,
     pub until_ms: u128,
+    pub start: Point,
+    pub end: Point,
 }
 
-impl Force for GravityForce {
+impl GravitationalForce {
+    fn current_point(&self, force_cycle_ms: u128) -> Point {
+        let delta_current = force_cycle_ms - self.from_ms;
+        let delta_end = self.until_ms - self.from_ms;
+
+        let fraction = delta_current as f32 / delta_end as f32;
+
+        let x = self.start.0 + fraction * (self.end.0 - self.start.0);
+        let y = self.start.1 + fraction * (self.end.1 - self.start.1);
+
+        return Point(x, y);
+    }
+}
+
+impl Force for GravitationalForce {
     // Based on newton's law of universal gravity.
     fn apply(&self, particle: &mut ForceData, force_cycle_ms: u128) {
         if force_cycle_ms < self.from_ms || self.until_ms <= force_cycle_ms {
             return;
         }
 
+        let point = self.current_point(force_cycle_ms);
+
         let particle_center_x = particle.x + particle.radius;
         let particle_center_y = particle.y + particle.radius;
-        let x_distance = self.center_x - particle_center_x;
-        let y_distance = self.center_y - particle_center_y;
+        let x_distance = point.0 - particle_center_x;
+        let y_distance = point.1 - particle_center_y;
 
         if x_distance.abs() < self.dead_zone && y_distance.abs() < self.dead_zone {
             return;

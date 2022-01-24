@@ -1,3 +1,4 @@
+use crate::point::Point;
 use macroquad::prelude::Color;
 
 //
@@ -17,5 +18,3 @@ pub struct Boid {
     y: f32,
     angle_degrees: f32,
 }
-
-pub struct Point(pub f32, pub f32);

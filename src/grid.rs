@@ -211,10 +211,9 @@ impl Grid {
 
         if let Some(force_handler) = &mut self.force_handler {
             force_handler.apply(&mut data);
+            particle.vx = data.vx;
+            particle.vy = data.vy;
         }
-
-        particle.vx = data.vx;
-        particle.vy = data.vy;
 
         let new_vec_index = self.update_particle(&mut particle);
 
@@ -288,15 +287,6 @@ impl Grid {
             0
         };
 
-        for i in (0..self.emitters.len()).rev() {
-            let mut emitter = self.emitters.swap_remove(i);
-            emitter.emit();
-
-            if !emitter.delete {
-                self.emitters.push(emitter);
-            }
-        }
-
         if let Some(force_handler) = &mut self.force_handler {
             force_handler.update(&self.lifetime);
         }
@@ -308,6 +298,15 @@ impl Grid {
                 }
 
                 self.update_spot(vec_index, spot_index);
+            }
+        }
+
+        for i in (0..self.emitters.len()).rev() {
+            let mut emitter = self.emitters.swap_remove(i);
+            emitter.emit();
+
+            if !emitter.delete {
+                self.emitters.push(emitter);
             }
         }
 

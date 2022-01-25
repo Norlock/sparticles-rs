@@ -1,6 +1,9 @@
 use crate::{force::ForceData, force_handler::ForceHandler};
 use macroquad::prelude::*;
-use std::time::{Duration, Instant};
+use std::{
+    f64::consts::PI,
+    time::{Duration, Instant},
+};
 
 use crate::{
     animation::{Animate, AnimationData},
@@ -12,7 +15,10 @@ pub struct EmitterOptions {
     pub emitter_diameter: f32,
     pub emitter_duration: Duration,
     pub angle_degrees: f32,
+    /// Initial spread factor
     pub diffusion_degrees: f32,
+    /// How well will it stay on course. (0. for perfect).
+    pub stray_degrees: f32,
     pub emission_distortion_px: f32,
     pub particle_color: Color,
     pub particles_per_emission: u32,
@@ -38,7 +44,8 @@ pub struct Emitter {
     respect_grid_bounds: bool,
     angle_radians: f32,
     angle_emission_radians: f32,
-    diffusion_degrees: f32,
+    diffusion_radians: f32,
+    stray_radians: f32,
     particle_color: Color,
     particles_per_emission: u32,
     delay_between_emission_ms: u128,
@@ -80,7 +87,8 @@ impl Emitter {
             particles_per_emission: options.particles_per_emission,
             particles: Vec::new(),
             particle_color: options.particle_color,
-            diffusion_degrees: options.diffusion_degrees,
+            diffusion_radians: options.diffusion_degrees.to_radians(),
+            stray_radians: options.stray_degrees.to_radians(),
             particle_mass: options.particle_mass,
             particle_radius: options.particle_radius,
             x,
@@ -160,8 +168,14 @@ impl Emitter {
                 animator.animate(&mut anim_data, particle.lifetime.elapsed().as_millis());
             }
 
-            particle.x += vx;
-            particle.y += vy;
+            if 0. < self.stray_radians {
+                let stray = rand::gen_range(-self.stray_radians, self.stray_radians);
+                particle.vx = (particle.vx * stray.cos()) - (particle.vy * stray.sin());
+                particle.vy = (particle.vx * stray.sin()) + (particle.vy * stray.cos());
+            }
+
+            particle.x += particle.vx;
+            particle.y += particle.vy;
             particle.color = anim_data.color;
             particle.radius = anim_data.radius;
 
@@ -199,12 +213,11 @@ impl Emitter {
         let x = (self.x + distortion) + position * self.angle_radians.cos();
         let y = (self.y + distortion) + position * self.angle_radians.sin();
 
-        let diffusion_delta =
-            rand::gen_range(-self.diffusion_degrees, self.diffusion_degrees).to_radians();
+        let diffusion_delta = rand::gen_range(-self.diffusion_radians, self.diffusion_radians);
 
-        let angle = self.angle_emission_radians + diffusion_delta;
-        let vx = self.particle_speed * angle.cos();
-        let vy = self.particle_speed * angle.sin();
+        let angle_radians = self.angle_emission_radians + diffusion_delta;
+        let vx = self.particle_speed * angle_radians.cos();
+        let vy = self.particle_speed * angle_radians.sin();
 
         EmittedParticle {
             x,

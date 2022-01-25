@@ -18,7 +18,6 @@ pub struct EmitterOptions {
     /// Initial spread factor
     pub diffusion_degrees: f32,
     /// How well will it stay on course. (0. for perfect).
-    pub stray_degrees: f32,
     pub emission_distortion_px: f32,
     pub particle_color: Color,
     pub particles_per_emission: u32,
@@ -45,7 +44,6 @@ pub struct Emitter {
     angle_radians: f32,
     angle_emission_radians: f32,
     diffusion_radians: f32,
-    stray_radians: f32,
     particle_color: Color,
     particles_per_emission: u32,
     delay_between_emission_ms: u128,
@@ -88,7 +86,6 @@ impl Emitter {
             particles: Vec::new(),
             particle_color: options.particle_color,
             diffusion_radians: options.diffusion_degrees.to_radians(),
-            stray_radians: options.stray_degrees.to_radians(),
             particle_mass: options.particle_mass,
             particle_radius: options.particle_radius,
             x,
@@ -162,22 +159,20 @@ impl Emitter {
             let mut anim_data: AnimationData = AnimationData {
                 radius: particle.radius,
                 color: particle.color,
+                vx: particle.vx,
+                vy: particle.vy,
             };
 
             for animator in self.animations.iter() {
                 animator.animate(&mut anim_data, particle.lifetime.elapsed().as_millis());
             }
 
-            if 0. < self.stray_radians {
-                let stray = rand::gen_range(-self.stray_radians, self.stray_radians);
-                particle.vx = (particle.vx * stray.cos()) - (particle.vy * stray.sin());
-                particle.vy = (particle.vx * stray.sin()) + (particle.vy * stray.cos());
-            }
-
-            particle.x += particle.vx;
-            particle.y += particle.vy;
+            particle.vx = anim_data.vx;
+            particle.vy = anim_data.vy;
             particle.color = anim_data.color;
             particle.radius = anim_data.radius;
+            particle.x += particle.vx;
+            particle.y += particle.vy;
 
             draw_circle(
                 particle.x + self.grid_position.x,

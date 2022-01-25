@@ -20,6 +20,7 @@ mod pattern;
 mod point;
 mod position;
 mod size_animation;
+mod stray_animation;
 mod swarm_emitter;
 
 use grid::{Grid, GridOptions};

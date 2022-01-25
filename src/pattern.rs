@@ -2,6 +2,7 @@ use crate::constant_force::ConstantForce;
 use crate::gravitational_force::GravitationalForce;
 use crate::point::Point;
 use crate::size_animation::SizeAnimation;
+use crate::stray_animation::{self, StrayAnimation};
 use crate::swarm_emitter::SwarmEmitter;
 use std::rc::Rc;
 use std::time::Duration;
@@ -99,7 +100,6 @@ pub fn smoke() -> EmitterOptions {
         emission_distortion_px: 0.,
         delay_between_emission: Duration::from_millis(500),
         diffusion_degrees: 360.,
-        stray_degrees: 0.,
         particle_color: Color::from_rgba(200, 100, 1, 255),
         particles_per_emission: 200,
         particle_lifetime: Duration::from_secs(2),
@@ -114,12 +114,14 @@ pub fn smoke() -> EmitterOptions {
 }
 
 pub fn another_emitter() -> EmitterOptions {
-    let color_animation = ColorAnimation {
+    let color_animation = Box::new(ColorAnimation {
         color1: Color::from_rgba(2, 200, 1, 255),
         color2: Color::from_rgba(212, 132, 64, 255),
         from_ms: 200,
         until_ms: 700,
-    };
+    });
+
+    let stray_animation = Box::new(StrayAnimation::new(1_000, 3_000, 10.));
 
     let mut force_handler = ForceHandler::new(Duration::from_secs(10));
     force_handler.add(Box::new(GravitationalForce {
@@ -155,11 +157,10 @@ pub fn another_emitter() -> EmitterOptions {
         particle_lifetime: Duration::from_secs(3),
         particle_radius: 3.,
         particle_mass: 1.,
-        particle_friction_coefficient: 0.008,
-        stray_degrees: 1.5,
+        particle_friction_coefficient: 0.007,
         particle_speed: 2.5,
         respect_grid_bounds: true,
-        animations: vec![Box::new(color_animation)],
+        animations: vec![color_animation, stray_animation],
         force_handler: Some(force_handler),
     }
 }

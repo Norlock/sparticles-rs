@@ -1,11 +1,11 @@
 use crate::animation::{Animate, AnimationData};
 use macroquad::prelude::rand;
+use std::fmt::Debug;
 use std::rc::Rc;
 use std::time::Instant;
 
 #[derive(Debug)]
 pub struct AnimationHandler {
-    pub lifetime: Instant,
     animation_offset_ms: u64,
     iteration: u128,
     animations: Rc<Vec<Box<dyn Animate>>>,
@@ -18,10 +18,17 @@ pub enum StartAnimationAt {
     RangeMs(u64, u64),
 }
 
+#[derive(Debug)]
 pub struct AnimationOptions {
     pub animations: Rc<Vec<Box<dyn Animate>>>,
     pub duration_ms: u128,
     pub start_at: StartAnimationAt,
+}
+
+impl Debug for StartAnimationAt {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "StartAnimationAt")
+    }
 }
 
 impl AnimationHandler {
@@ -35,7 +42,6 @@ impl AnimationHandler {
                 StartAnimationAt::RangeMs(start, end) => rand::gen_range(start, end),
             };
             Some(AnimationHandler {
-                lifetime: Instant::now(),
                 iteration: 0,
                 animation_offset_ms,
                 animations: Rc::clone(&animation_handler.animations),
@@ -47,15 +53,18 @@ impl AnimationHandler {
     }
 
     pub fn animate(&mut self, data: &mut AnimationData) {
-        let elapsed_time_ms = self.lifetime.elapsed().as_millis();
-        let new_iteration = self.duration_ms / elapsed_time_ms;
+        let new_iteration = if data.elapsed_ms == 0 {
+            0
+        } else {
+            self.duration_ms / data.elapsed_ms
+        };
 
         if self.iteration < new_iteration {
             self.iteration = new_iteration;
         }
 
         let animation_cycle_ms =
-            (elapsed_time_ms + self.animation_offset_ms as u128) % self.duration_ms;
+            (data.elapsed_ms + self.animation_offset_ms as u128) % self.duration_ms;
 
         for animation in self.animations.iter() {
             animation.animate(data, animation_cycle_ms);

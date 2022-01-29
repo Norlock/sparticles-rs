@@ -1,4 +1,5 @@
 use crate::{
+    animation_handler::{AnimationHandler, AnimationOptions},
     force::ForceData,
     force_handler::ForceHandler,
     trail_handler::{ColorPoint, TrailHandler},
@@ -6,10 +7,7 @@ use crate::{
 use macroquad::prelude::*;
 use std::time::{Duration, Instant};
 
-use crate::{
-    animation::{Animate, AnimationData},
-    position::Position,
-};
+use crate::{animation::AnimationData, position::Position};
 
 pub struct EmitterOptions {
     pub emitter_position: Position,
@@ -33,7 +31,7 @@ pub struct EmitterOptions {
     /// number between 0 and 1, e.g. 0.001
     pub particle_friction_coefficient: f32,
     pub respect_grid_bounds: bool,
-    pub animations: Vec<Box<dyn Animate>>,
+    pub animation_options: Option<AnimationOptions>,
     pub force_handler: Option<ForceHandler>,
     pub trail_handler: Option<TrailHandler>,
 }
@@ -62,7 +60,7 @@ pub struct Emitter {
     particles: Vec<EmittedParticle>,
     lifetime: Instant,
     emitter_duration: Duration,
-    animations: Vec<Box<dyn Animate>>,
+    animation_options: Option<AnimationOptions>,
     force_handler: Option<ForceHandler>,
     trail_handler: Option<TrailHandler>,
     pub delete: bool,
@@ -78,6 +76,7 @@ struct EmittedParticle {
     lifetime: Instant,
     color: Color,
     trail_handler: Option<TrailHandler>,
+    animation_handler: Option<AnimationHandler>,
 }
 
 impl Emitter {
@@ -111,7 +110,7 @@ impl Emitter {
             respect_grid_bounds: options.respect_grid_bounds,
             particle_friction_coefficient: options.particle_friction_coefficient,
             particle_speed: options.particle_speed,
-            animations: options.animations,
+            animation_options: options.animation_options,
             force_handler: options.force_handler,
             trail_handler: options.trail_handler,
             delete: false,
@@ -165,23 +164,24 @@ impl Emitter {
                 particle.vy = vy;
             }
 
-            let mut anim_data: AnimationData = AnimationData {
-                radius: particle.radius,
-                color: particle.color,
-                vx: particle.vx,
-                vy: particle.vy,
-            };
-
             let elapsed_ms = particle.lifetime.elapsed().as_millis();
 
-            for animator in self.animations.iter() {
-                animator.animate(&mut anim_data, elapsed_ms);
+            if let Some(animation_handler) = &mut particle.animation_handler {
+                let mut data: AnimationData = AnimationData {
+                    radius: particle.radius,
+                    color: particle.color,
+                    vx: particle.vx,
+                    vy: particle.vy,
+                    elapsed_ms: particle.lifetime.elapsed().as_millis(),
+                };
+
+                animation_handler.animate(&mut data);
+                particle.vx = data.vx;
+                particle.vy = data.vy;
+                particle.color = data.color;
+                particle.radius = data.radius;
             }
 
-            particle.vx = anim_data.vx;
-            particle.vy = anim_data.vy;
-            particle.color = anim_data.color;
-            particle.radius = anim_data.radius;
             particle.x += particle.vx;
             particle.y += particle.vy;
 
@@ -242,6 +242,8 @@ impl Emitter {
         let vx = self.particle_speed * angle_radians.cos();
         let vy = self.particle_speed * angle_radians.sin();
 
+        let animation_handler = AnimationHandler::new(&self.animation_options);
+
         EmittedParticle {
             x,
             y,
@@ -251,6 +253,7 @@ impl Emitter {
             radius: self.particle_radius,
             color: self.particle_color,
             trail_handler: self.trail_handler.clone(),
+            animation_handler,
         }
     }
 }

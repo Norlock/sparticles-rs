@@ -3,6 +3,7 @@ use crate::animation_handler::AnimationHandler;
 use crate::animation_handler::AnimationOptions;
 use crate::collision::CollisionData;
 use macroquad::prelude::*;
+use std::time::Instant;
 
 use crate::position::Position;
 
@@ -22,6 +23,7 @@ pub struct Particle {
     pub elasticity: f32,
     /// number between 0 and 1. E.g. 0.008
     pub friction_coefficient: f32,
+    pub lifetime: Instant,
     pub animation_handler: Option<AnimationHandler>,
 }
 
@@ -55,6 +57,7 @@ impl Particle {
             elasticity: attributes.elasticity,
             mass: attributes.mass,
             queue_frame: u64::MAX,
+            lifetime: Instant::now(),
             animation_handler,
         }
     }
@@ -188,6 +191,7 @@ impl Particle {
                 radius: self.radius,
                 vx: self.vx,
                 vy: self.vy,
+                elapsed_ms: self.lifetime.elapsed().as_millis(),
             };
 
             animator.animate(&mut data);

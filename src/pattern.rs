@@ -32,39 +32,27 @@ pub fn shimmer_animations() -> AnimationOptions {
         until_ms: 4000,
     }));
 
-    let animator = AnimationOptions::new(4000, StartAnimationAt::RangeMs(0, 1000), animations);
-
-    //animator.add(Box::new(SizeAnimation {
-    //from_ms: 0,
-    //until_ms: 750,
-    //start_radius: 2.5,
-    //end_radius: 1.,
-    //}));
-
-    //animator.add(Box::new(SizeAnimation {
-    //from_ms: 750,
-    //until_ms: 1500,
-    //start_radius: 1.,
-    //end_radius: 2.5,
-    //}));
-
-    animator
+    AnimationOptions::new(4000, StartAnimationAt::RangeMs(0, 1000), animations)
 }
 
 pub fn smoke() -> EmitterOptions {
-    let color_animation = Box::new(ColorAnimation {
+    let mut animations: Vec<Box<dyn Animate>> = Vec::new();
+
+    animations.push(Box::new(ColorAnimation {
         color1: Color::from_rgba(200, 100, 1, 255),
         color2: Color::from_rgba(145, 42, 245, 255),
         from_ms: 0,
         until_ms: 2000,
-    });
+    }));
 
-    let size_animation = Box::new(SizeAnimation {
+    animations.push(Box::new(SizeAnimation {
         from_ms: 0,
         until_ms: 1000,
         start_radius: 5.,
         end_radius: 2.,
-    });
+    }));
+
+    let animation_options = AnimationOptions::new(4000, StartAnimationAt::Zero, animations);
 
     let mut force_handler = ForceHandler::new(Duration::from_secs(4));
 
@@ -87,6 +75,7 @@ pub fn smoke() -> EmitterOptions {
     }));
 
     let trail_handler = TrailHandler::new(20, 50);
+
     EmitterOptions {
         emitter_position: Position::new(300., 300.),
         emitter_diameter: 100.,
@@ -105,26 +94,32 @@ pub fn smoke() -> EmitterOptions {
         particle_speed: 2.2,
         particle_friction_coefficient: 0.01,
         respect_grid_bounds: true,
-        animations: vec![color_animation, size_animation],
+        animation_options: Some(animation_options),
         force_handler: Some(force_handler),
     }
 }
 
 pub fn another_emitter() -> EmitterOptions {
-    let color_animation1 = Box::new(ColorAnimation {
-        color1: Color::from_rgba(10, 0, 250, 255),
-        color2: Color::from_rgba(200, 0, 0, 255),
+    let mut animations: Vec<Box<dyn Animate>> = Vec::new();
+
+    animations.push(Box::new(ColorAnimation {
+        color1: Color::from_rgba(0, 10, 20, 255),
+        color2: Color::from_rgba(0, 51, 102, 255),
         from_ms: 0,
         until_ms: 500,
-    });
-    let color_animation2 = Box::new(ColorAnimation {
-        color1: Color::from_rgba(200, 0, 0, 255),
-        color2: Color::from_rgba(232, 232, 0, 255),
+    }));
+
+    animations.push(Box::new(ColorAnimation {
+        color1: Color::from_rgba(0, 51, 102, 255),
+        color2: Color::from_rgba(102, 0, 102, 255),
         from_ms: 500,
         until_ms: 3_000,
-    });
+    }));
 
-    let stray_animation = Box::new(StrayAnimation::new(1_000, 3_000, 10.));
+    animations.push(Box::new(StrayAnimation::new(1_000, 3_000, 10.)));
+
+    let animation_options =
+        AnimationOptions::new(3_000, StartAnimationAt::RangeMs(0, 100), animations);
 
     let mut force_handler = ForceHandler::new(Duration::from_secs(10));
     force_handler.add(Box::new(GravitationalForce {
@@ -159,17 +154,17 @@ pub fn another_emitter() -> EmitterOptions {
         emission_distortion_px: 3.,
         trail_handler: Some(trail_handler),
         delay_between_emission: Duration::from_millis(100),
-        diffusion_degrees: 60.,
+        diffusion_degrees: 70.,
         particle_color: Color::from_rgba(10, 0, 250, 255),
         particle_texture: None,
-        particles_per_emission: 20,
+        particles_per_emission: 30,
         particle_lifetime: Duration::from_secs(3),
         particle_radius: 3.,
         particle_mass: 1.,
         particle_friction_coefficient: 0.007,
         particle_speed: 2.5,
         respect_grid_bounds: true,
-        animations: vec![color_animation1, color_animation2, stray_animation],
+        animation_options: Some(animation_options),
         force_handler: Some(force_handler),
     }
 }

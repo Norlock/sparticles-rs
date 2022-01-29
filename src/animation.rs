@@ -16,4 +16,5 @@ pub struct AnimationData {
     pub radius: f32,
     pub vx: f32,
     pub vy: f32,
+    pub elapsed_ms: u128,
 }

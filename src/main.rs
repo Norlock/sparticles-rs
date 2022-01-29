@@ -59,6 +59,7 @@ async fn main() {
 
     let attributes = ParticleAttributes {
         color: Color::from_rgba(255, 255, 255, 255),
+        texture: None,
         friction_coefficient: 0.001,
         diameter: 6.,
         elasticity: 1.,
@@ -69,8 +70,11 @@ async fn main() {
 
     grid.fill(&attributes, 50, FillStyle::WhiteNoise);
 
+    let texture = load_texture("assets/bubble.png").await.unwrap();
+
     let attributes = ParticleAttributes {
         color: Color::from_rgba(20, 255, 0, 255),
+        texture: Some(texture),
         friction_coefficient: 0.008,
         diameter: 7.,
         elasticity: 1.,
@@ -81,7 +85,7 @@ async fn main() {
     grid.fill(&attributes, 100, FillStyle::WhiteNoise);
 
     //grid.add_emitter(smoke());
-    grid.add_emitter(another_emitter());
+    grid.add_emitter(another_emitter().await);
 
     loop {
         clear_background(BLACK);

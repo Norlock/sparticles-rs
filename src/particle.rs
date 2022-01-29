@@ -2,8 +2,7 @@ use crate::animation::AnimationData;
 use crate::animation_handler::AnimationHandler;
 use crate::animation_handler::AnimationOptions;
 use crate::collision::CollisionData;
-use macroquad::prelude::draw_circle;
-use macroquad::prelude::Color;
+use macroquad::prelude::*;
 
 use crate::position::Position;
 
@@ -17,6 +16,7 @@ pub struct Particle {
     pub radius: f32,
     pub diameter: f32,
     pub color: Color,
+    texture: Option<Texture2D>,
     pub mass: f32,
     /// number between 0 and 1.
     pub elasticity: f32,
@@ -32,6 +32,7 @@ pub struct ParticleAttributes {
     pub friction_coefficient: f32,
 
     pub color: Color,
+    pub texture: Option<Texture2D>,
     pub mass: f32,
     pub diameter: f32,
     pub animation_options: Option<AnimationOptions>,
@@ -48,6 +49,7 @@ impl Particle {
             vy: 0.,
             friction_coefficient: attributes.friction_coefficient,
             color: attributes.color.clone(),
+            texture: attributes.texture,
             radius: attributes.diameter / 2.,
             diameter: attributes.diameter,
             elasticity: attributes.elasticity,
@@ -197,12 +199,22 @@ impl Particle {
     }
 
     pub fn draw(&self, grid_position: &Position) {
-        draw_circle(
-            self.x + grid_position.x,
-            self.y + grid_position.y,
-            self.radius,
-            self.color,
-        );
+        let x = self.x + grid_position.x;
+        let y = self.y + grid_position.y;
+
+        if let Some(texture) = self.texture {
+            let side = self.diameter;
+            let dest_size = Some(Vec2::new(side, side));
+
+            let params = DrawTextureParams {
+                dest_size,
+                ..Default::default()
+            };
+
+            draw_texture_ex(texture, x, y, self.color, params);
+        } else {
+            draw_circle(x, y, self.radius, self.color);
+        }
     }
 
     pub fn apply_friction(&mut self) {

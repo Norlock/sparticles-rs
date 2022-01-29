@@ -14,6 +14,7 @@ use crate::color_animation::ColorAnimation;
 use crate::emitter::EmitterOptions;
 use crate::force_handler::ForceHandler;
 use crate::position::Position;
+use macroquad::miniquad::Context;
 use macroquad::prelude::*;
 
 pub fn shimmer_animations() -> AnimationOptions {
@@ -101,6 +102,7 @@ pub fn smoke() -> EmitterOptions {
         delay_between_emission: Duration::from_millis(500),
         diffusion_degrees: 360.,
         particle_color: Color::from_rgba(200, 100, 1, 255),
+        particle_texture: None,
         particles_per_emission: 200,
         particle_lifetime: Duration::from_secs(2),
         particle_radius: 5.,
@@ -113,12 +115,18 @@ pub fn smoke() -> EmitterOptions {
     }
 }
 
-pub fn another_emitter() -> EmitterOptions {
-    let color_animation = Box::new(ColorAnimation {
-        color1: Color::from_rgba(2, 200, 1, 255),
-        color2: Color::from_rgba(212, 132, 64, 255),
-        from_ms: 200,
-        until_ms: 700,
+pub async fn another_emitter() -> EmitterOptions {
+    let color_animation1 = Box::new(ColorAnimation {
+        color1: Color::from_rgba(10, 0, 250, 255),
+        color2: Color::from_rgba(200, 0, 0, 255),
+        from_ms: 0,
+        until_ms: 500,
+    });
+    let color_animation2 = Box::new(ColorAnimation {
+        color1: Color::from_rgba(200, 0, 0, 255),
+        color2: Color::from_rgba(232, 232, 0, 255),
+        from_ms: 500,
+        until_ms: 3_000,
     });
 
     let stray_animation = Box::new(StrayAnimation::new(1_000, 3_000, 10.));
@@ -152,7 +160,8 @@ pub fn another_emitter() -> EmitterOptions {
         emission_distortion_px: 3.,
         delay_between_emission: Duration::from_millis(100),
         diffusion_degrees: 60.,
-        particle_color: Color::from_rgba(2, 200, 1, 255),
+        particle_color: Color::from_rgba(10, 0, 250, 255),
+        particle_texture: None,
         particles_per_emission: 50,
         particle_lifetime: Duration::from_secs(3),
         particle_radius: 3.,
@@ -160,7 +169,7 @@ pub fn another_emitter() -> EmitterOptions {
         particle_friction_coefficient: 0.007,
         particle_speed: 2.5,
         respect_grid_bounds: true,
-        animations: vec![color_animation, stray_animation],
+        animations: vec![color_animation1, color_animation2, stray_animation],
         force_handler: Some(force_handler),
     }
 }

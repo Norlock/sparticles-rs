@@ -1,9 +1,6 @@
 use crate::{force::ForceData, force_handler::ForceHandler};
-use macroquad::prelude::*;
-use std::{
-    f64::consts::PI,
-    time::{Duration, Instant},
-};
+use macroquad::{miniquad::Context, prelude::*};
+use std::time::{Duration, Instant};
 
 use crate::{
     animation::{Animate, AnimationData},
@@ -20,6 +17,7 @@ pub struct EmitterOptions {
     /// How well will it stay on course. (0. for perfect).
     pub emission_distortion_px: f32,
     pub particle_color: Color,
+    pub particle_texture: Option<Texture2D>,
     pub particles_per_emission: u32,
     pub delay_between_emission: Duration,
     pub particle_lifetime: Duration,
@@ -45,6 +43,7 @@ pub struct Emitter {
     angle_emission_radians: f32,
     diffusion_radians: f32,
     particle_color: Color,
+    particle_texture: Option<Texture2D>,
     particles_per_emission: u32,
     delay_between_emission_ms: u128,
     emission_distortion: f32,
@@ -85,6 +84,7 @@ impl Emitter {
             particles_per_emission: options.particles_per_emission,
             particles: Vec::new(),
             particle_color: options.particle_color,
+            particle_texture: options.particle_texture,
             diffusion_radians: options.diffusion_degrees.to_radians(),
             particle_mass: options.particle_mass,
             particle_radius: options.particle_radius,
@@ -174,12 +174,22 @@ impl Emitter {
             particle.x += particle.vx;
             particle.y += particle.vy;
 
-            draw_circle(
-                particle.x + self.grid_position.x,
-                particle.y + self.grid_position.y,
-                particle.radius,
-                particle.color,
-            );
+            let x = particle.x + self.grid_position.x;
+            let y = particle.y + self.grid_position.y;
+
+            if let Some(texture) = self.particle_texture {
+                let side = particle.radius * 2.;
+                let dest_size = Some(Vec2::new(side, side));
+
+                let params = DrawTextureParams {
+                    dest_size,
+                    ..Default::default()
+                };
+
+                draw_texture_ex(texture, x, y, particle.color, params);
+            } else {
+                draw_circle(x, y, particle.radius, particle.color);
+            }
 
             let diameter = particle.radius * 2.;
 

@@ -94,19 +94,20 @@ pub fn smoke() -> EmitterOptions {
         max_vy: -2.,
     }));
 
+    let trail_handler = TrailHandler::new(30, 50);
     EmitterOptions {
         emitter_position: Position::new(300., 300.),
         emitter_diameter: 100.,
         emitter_duration: Duration::from_secs(10),
         angle_degrees: 135.,
         emission_distortion_px: 0.,
-        trail_handler: None,
-        delay_between_emission: Duration::from_millis(500),
+        trail_handler: Some(trail_handler),
+        delay_between_emission: Duration::from_millis(3500),
         diffusion_degrees: 360.,
         particle_color: Color::from_rgba(200, 100, 1, 255),
         particle_texture: None,
         particles_per_emission: 200,
-        particle_lifetime: Duration::from_secs(2),
+        particle_lifetime: Duration::from_secs(3),
         particle_radius: 5.,
         particle_mass: 1.,
         particle_speed: 2.2,

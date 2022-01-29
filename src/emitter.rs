@@ -2,7 +2,7 @@ use crate::{
     force::ForceData,
     force_handler::ForceHandler,
     point::Point,
-    trail_handler::{self, TrailHandler},
+    trail_handler::{self, ColorPoint, TrailHandler},
 };
 use macroquad::{miniquad::Context, prelude::*};
 use std::time::{Duration, Instant};
@@ -189,7 +189,12 @@ impl Emitter {
             let y = particle.y + self.grid_position.y;
 
             if let Some(trail_handler) = &mut particle.trail_handler {
-                trail_handler.update(Point(x, y), particle.radius, &particle.color, elapsed_ms);
+                let color_point = ColorPoint {
+                    color: particle.color.clone(),
+                    x,
+                    y,
+                };
+                trail_handler.update(color_point, particle.radius, elapsed_ms);
             }
 
             if let Some(texture) = self.particle_texture {

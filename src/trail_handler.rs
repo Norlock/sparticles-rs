@@ -28,14 +28,14 @@ impl TrailHandler {
     }
 
     fn draw(&mut self, radius: f32) {
-        let diameter = radius * 1.8;
+        let diameter = radius * 1.5;
         let until = self.trail.len();
 
         let mut i = 1;
         self.trail.iter_mut().reduce(|from, to| {
             let fraction = i as f32 / until as f32;
             i += 1;
-            to.color.a /= 1.1;
+            to.color.a = fraction;
             draw_line(from.x, from.y, to.x, to.y, fraction * diameter, to.color);
             to
         });

@@ -3,7 +3,6 @@
 mod accelerating_force;
 mod animation;
 mod animation_handler;
-mod animator;
 mod collision;
 mod color_animation;
 mod constant_force;
@@ -66,13 +65,13 @@ async fn main() {
         diameter: 6.,
         elasticity: 1.,
         mass: 2.0,
-        animation_options: None,
+        animation_options: Some(shimmer_animations()),
     };
 
     grid.fill(&attributes, 50, FillStyle::WhiteNoise);
 
     let attributes = ParticleAttributes {
-        color: Color::from_rgba(20, 255, 0, 255),
+        color: Color::from_rgba(20, 255, 255, 255),
         texture: None,
         friction_coefficient: 0.008,
         diameter: 7.,
@@ -84,7 +83,7 @@ async fn main() {
     grid.fill(&attributes, 100, FillStyle::WhiteNoise);
 
     //grid.add_emitter(smoke());
-    grid.add_emitter(another_emitter().await);
+    grid.add_emitter(another_emitter());
 
     loop {
         clear_background(BLACK);

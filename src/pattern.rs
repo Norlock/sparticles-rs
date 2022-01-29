@@ -1,42 +1,38 @@
+use crate::animation::Animate;
 use crate::constant_force::ConstantForce;
 use crate::gravitational_force::GravitationalForce;
 use crate::point::Point;
 use crate::size_animation::SizeAnimation;
-use crate::stray_animation::{self, StrayAnimation};
-use crate::swarm_emitter::SwarmEmitter;
-use crate::trail_handler::{self, TrailHandler};
-use std::rc::Rc;
+use crate::stray_animation::StrayAnimation;
+use crate::trail_handler::TrailHandler;
 use std::time::Duration;
 
 use crate::accelerating_force::AcceleratingForce;
 use crate::animation_handler::{AnimationOptions, StartAnimationAt};
-use crate::animator::Animator;
 use crate::color_animation::ColorAnimation;
 use crate::emitter::EmitterOptions;
 use crate::force_handler::ForceHandler;
 use crate::position::Position;
-use macroquad::miniquad::Context;
 use macroquad::prelude::*;
 
 pub fn shimmer_animations() -> AnimationOptions {
-    let mut animator = Animator {
-        animations: Vec::new(),
-        duration_ms: 2000,
-    };
+    let mut animations: Vec<Box<dyn Animate>> = Vec::new();
 
-    animator.add(Box::new(ColorAnimation {
+    animations.push(Box::new(ColorAnimation {
         color1: Color::from_rgba(255, 255, 255, 255),
         color2: Color::from_rgba(255, 255, 255, 0),
-        from_ms: 0,
-        until_ms: 1000,
-    }));
-
-    animator.add(Box::new(ColorAnimation {
-        color1: Color::from_rgba(255, 255, 255, 0),
-        color2: Color::from_rgba(255, 255, 255, 255),
         from_ms: 1000,
         until_ms: 2000,
     }));
+
+    animations.push(Box::new(ColorAnimation {
+        color1: Color::from_rgba(255, 255, 255, 0),
+        color2: Color::from_rgba(255, 255, 255, 255),
+        from_ms: 3000,
+        until_ms: 4000,
+    }));
+
+    let animator = AnimationOptions::new(4000, StartAnimationAt::RangeMs(0, 1000), animations);
 
     //animator.add(Box::new(SizeAnimation {
     //from_ms: 0,
@@ -52,11 +48,7 @@ pub fn shimmer_animations() -> AnimationOptions {
     //end_radius: 2.5,
     //}));
 
-    AnimationOptions {
-        animator: Rc::new(animator),
-        start_at: StartAnimationAt::RangeMs(0, 1000),
-        //start_at: StartAnimationAt::Zero,
-    }
+    animator
 }
 
 pub fn smoke() -> EmitterOptions {
@@ -94,7 +86,7 @@ pub fn smoke() -> EmitterOptions {
         max_vy: -2.,
     }));
 
-    let trail_handler = TrailHandler::new(30, 50);
+    let trail_handler = TrailHandler::new(20, 50);
     EmitterOptions {
         emitter_position: Position::new(300., 300.),
         emitter_diameter: 100.,
@@ -102,7 +94,7 @@ pub fn smoke() -> EmitterOptions {
         angle_degrees: 135.,
         emission_distortion_px: 0.,
         trail_handler: Some(trail_handler),
-        delay_between_emission: Duration::from_millis(3500),
+        delay_between_emission: Duration::from_millis(2500),
         diffusion_degrees: 360.,
         particle_color: Color::from_rgba(200, 100, 1, 255),
         particle_texture: None,
@@ -118,7 +110,7 @@ pub fn smoke() -> EmitterOptions {
     }
 }
 
-pub async fn another_emitter() -> EmitterOptions {
+pub fn another_emitter() -> EmitterOptions {
     let color_animation1 = Box::new(ColorAnimation {
         color1: Color::from_rgba(10, 0, 250, 255),
         color2: Color::from_rgba(200, 0, 0, 255),

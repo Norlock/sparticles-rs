@@ -1,10 +1,9 @@
 use crate::{
     force::ForceData,
     force_handler::ForceHandler,
-    point::Point,
-    trail_handler::{self, ColorPoint, TrailHandler},
+    trail_handler::{ColorPoint, TrailHandler},
 };
-use macroquad::{miniquad::Context, prelude::*};
+use macroquad::prelude::*;
 use std::time::{Duration, Instant};
 
 use crate::{
@@ -174,6 +173,7 @@ impl Emitter {
             };
 
             let elapsed_ms = particle.lifetime.elapsed().as_millis();
+
             for animator in self.animations.iter() {
                 animator.animate(&mut anim_data, elapsed_ms);
             }
@@ -220,9 +220,7 @@ impl Emitter {
                     || self.grid_position.height < particle.y + diameter)
             {
                 continue; // removes particle.
-            }
-
-            if particle.lifetime.elapsed() <= self.particle_lifetime {
+            } else if particle.lifetime.elapsed() <= self.particle_lifetime {
                 self.particles.push(particle);
             }
         }

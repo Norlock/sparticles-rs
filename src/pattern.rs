@@ -4,6 +4,7 @@ use crate::point::Point;
 use crate::size_animation::SizeAnimation;
 use crate::stray_animation::{self, StrayAnimation};
 use crate::swarm_emitter::SwarmEmitter;
+use crate::trail_handler::{self, TrailHandler};
 use std::rc::Rc;
 use std::time::Duration;
 
@@ -99,6 +100,7 @@ pub fn smoke() -> EmitterOptions {
         emitter_duration: Duration::from_secs(10),
         angle_degrees: 135.,
         emission_distortion_px: 0.,
+        trail_handler: None,
         delay_between_emission: Duration::from_millis(500),
         diffusion_degrees: 360.,
         particle_color: Color::from_rgba(200, 100, 1, 255),
@@ -152,17 +154,22 @@ pub async fn another_emitter() -> EmitterOptions {
         end: Point(400., 400.),
     }));
 
+    let trail_handler = TrailHandler::new(10, 64);
+
+    //let texture: Texture2D = load_texture("assets/bubble.png").await.unwrap();
+
     EmitterOptions {
         emitter_position: Position::new(300., 200.),
         emitter_diameter: 100.,
         emitter_duration: Duration::from_secs(10),
         angle_degrees: 135.,
         emission_distortion_px: 3.,
+        trail_handler: Some(trail_handler),
         delay_between_emission: Duration::from_millis(100),
         diffusion_degrees: 60.,
         particle_color: Color::from_rgba(10, 0, 250, 255),
         particle_texture: None,
-        particles_per_emission: 50,
+        particles_per_emission: 20,
         particle_lifetime: Duration::from_secs(3),
         particle_radius: 3.,
         particle_mass: 1.,

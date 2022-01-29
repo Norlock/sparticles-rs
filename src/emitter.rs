@@ -1,4 +1,9 @@
-use crate::{force::ForceData, force_handler::ForceHandler};
+use crate::{
+    force::ForceData,
+    force_handler::ForceHandler,
+    point::Point,
+    trail_handler::{self, TrailHandler},
+};
 use macroquad::{miniquad::Context, prelude::*};
 use std::time::{Duration, Instant};
 
@@ -23,6 +28,7 @@ pub struct EmitterOptions {
     pub particle_lifetime: Duration,
     pub particle_radius: f32,
     pub particle_mass: f32,
+
     /// Newton force
     pub particle_speed: f32,
     /// number between 0 and 1, e.g. 0.001
@@ -30,6 +36,7 @@ pub struct EmitterOptions {
     pub respect_grid_bounds: bool,
     pub animations: Vec<Box<dyn Animate>>,
     pub force_handler: Option<ForceHandler>,
+    pub trail_handler: Option<TrailHandler>,
 }
 
 #[derive(Debug)]
@@ -58,6 +65,7 @@ pub struct Emitter {
     emitter_duration: Duration,
     animations: Vec<Box<dyn Animate>>,
     force_handler: Option<ForceHandler>,
+    trail_handler: Option<TrailHandler>,
     pub delete: bool,
 }
 
@@ -70,6 +78,7 @@ struct EmittedParticle {
     radius: f32,
     lifetime: Instant,
     color: Color,
+    trail_handler: Option<TrailHandler>,
 }
 
 impl Emitter {
@@ -105,6 +114,7 @@ impl Emitter {
             particle_speed: options.particle_speed,
             animations: options.animations,
             force_handler: options.force_handler,
+            trail_handler: options.trail_handler,
             delete: false,
         }
     }
@@ -163,8 +173,9 @@ impl Emitter {
                 vy: particle.vy,
             };
 
+            let elapsed_ms = particle.lifetime.elapsed().as_millis();
             for animator in self.animations.iter() {
-                animator.animate(&mut anim_data, particle.lifetime.elapsed().as_millis());
+                animator.animate(&mut anim_data, elapsed_ms);
             }
 
             particle.vx = anim_data.vx;
@@ -176,6 +187,10 @@ impl Emitter {
 
             let x = particle.x + self.grid_position.x;
             let y = particle.y + self.grid_position.y;
+
+            if let Some(trail_handler) = &mut particle.trail_handler {
+                trail_handler.update(Point(x, y), particle.radius, &particle.color, elapsed_ms);
+            }
 
             if let Some(texture) = self.particle_texture {
                 let side = particle.radius * 2.;
@@ -232,6 +247,7 @@ impl Emitter {
             vy,
             radius: self.particle_radius,
             color: self.particle_color,
+            trail_handler: self.trail_handler.clone(),
         }
     }
 }

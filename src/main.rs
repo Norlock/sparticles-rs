@@ -22,6 +22,7 @@ mod position;
 mod size_animation;
 mod stray_animation;
 mod swarm_emitter;
+mod trail_handler;
 
 use grid::{Grid, GridOptions};
 
@@ -74,7 +75,7 @@ async fn main() {
 
     let attributes = ParticleAttributes {
         color: Color::from_rgba(20, 255, 0, 255),
-        texture: Some(texture),
+        texture: None,
         friction_coefficient: 0.008,
         diameter: 7.,
         elasticity: 1.,

@@ -172,10 +172,10 @@ impl Emitter {
                     color: particle.color,
                     vx: particle.vx,
                     vy: particle.vy,
-                    elapsed_ms: particle.lifetime.elapsed().as_millis(),
                 };
 
-                animation_handler.animate(&mut data);
+                let elapsed_ms = particle.lifetime.elapsed().as_millis();
+                animation_handler.animate(&mut data, elapsed_ms);
                 particle.vx = data.vx;
                 particle.vy = data.vy;
                 particle.color = data.color;

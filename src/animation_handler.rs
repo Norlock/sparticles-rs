@@ -33,38 +33,36 @@ impl Debug for StartAnimationAt {
 
 impl AnimationHandler {
     pub fn new(options: &Option<AnimationOptions>) -> Option<Self> {
-        if let Some(animation_handler) = options {
-            let animation_offset_ms = match animation_handler.start_at {
-                StartAnimationAt::Zero => 0,
-                StartAnimationAt::Random => {
-                    rand::gen_range(0, animation_handler.duration_ms as u64)
-                }
-                StartAnimationAt::RangeMs(start, end) => rand::gen_range(start, end),
-            };
-            Some(AnimationHandler {
-                iteration: 0,
-                animation_offset_ms,
-                animations: Rc::clone(&animation_handler.animations),
-                duration_ms: animation_handler.duration_ms,
-            })
-        } else {
-            None
+        match options {
+            Some(ah) => {
+                let animation_offset_ms = match ah.start_at {
+                    StartAnimationAt::Zero => 0,
+                    StartAnimationAt::Random => rand::gen_range(0, ah.duration_ms as u64),
+                    StartAnimationAt::RangeMs(start, end) => rand::gen_range(start, end),
+                };
+                Some(AnimationHandler {
+                    iteration: 0,
+                    animation_offset_ms,
+                    animations: Rc::clone(&ah.animations),
+                    duration_ms: ah.duration_ms,
+                })
+            }
+            None => None,
         }
     }
 
-    pub fn animate(&mut self, data: &mut AnimationData) {
-        let new_iteration = if data.elapsed_ms == 0 {
+    pub fn animate(&mut self, data: &mut AnimationData, elapsed_ms: u128) {
+        let new_iteration = if elapsed_ms == 0 {
             0
         } else {
-            self.duration_ms / data.elapsed_ms
+            self.duration_ms / elapsed_ms
         };
 
         if self.iteration < new_iteration {
             self.iteration = new_iteration;
         }
 
-        let animation_cycle_ms =
-            (data.elapsed_ms + self.animation_offset_ms as u128) % self.duration_ms;
+        let animation_cycle_ms = (elapsed_ms + self.animation_offset_ms as u128) % self.duration_ms;
 
         for animation in self.animations.iter() {
             animation.animate(data, animation_cycle_ms);

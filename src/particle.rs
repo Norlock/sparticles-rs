@@ -191,10 +191,10 @@ impl Particle {
                 radius: self.radius,
                 vx: self.vx,
                 vy: self.vy,
-                elapsed_ms: self.lifetime.elapsed().as_millis(),
             };
 
-            animator.animate(&mut data);
+            let elapsed_ms = self.lifetime.elapsed().as_millis();
+            animator.animate(&mut data, elapsed_ms);
 
             self.color = data.color;
             self.radius = data.radius;

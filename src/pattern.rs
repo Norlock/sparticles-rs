@@ -5,6 +5,7 @@ use crate::point::Point;
 use crate::size_animation::SizeAnimation;
 use crate::stray_animation::StrayAnimation;
 use crate::trail_handler::TrailHandler;
+use crate::trail_handler::TrailOptions;
 use std::time::Duration;
 
 use crate::accelerating_force::AcceleratingForce;
@@ -74,7 +75,13 @@ pub fn smoke() -> EmitterOptions {
         max_vy: -2.,
     }));
 
-    let trail_handler = TrailHandler::new(20, 50);
+    let trail_handler = TrailHandler::new(TrailOptions {
+        trail_length: 10,
+        update_ms: 64,
+        opacity_from: 0.0,
+        opacity_to: 0.8,
+        diameter_fraction: 1.,
+    });
 
     EmitterOptions {
         emitter_position: Position::new(300., 300.),
@@ -104,13 +111,13 @@ pub fn another_emitter() -> EmitterOptions {
 
     animations.push(Box::new(ColorAnimation {
         color1: Color::from_rgba(0, 10, 20, 255),
-        color2: Color::from_rgba(0, 51, 102, 255),
+        color2: Color::from_rgba(0, 61, 152, 255),
         from_ms: 0,
         until_ms: 500,
     }));
 
     animations.push(Box::new(ColorAnimation {
-        color1: Color::from_rgba(0, 51, 102, 255),
+        color1: Color::from_rgba(0, 61, 162, 255),
         color2: Color::from_rgba(102, 0, 102, 255),
         from_ms: 500,
         until_ms: 3_000,
@@ -142,7 +149,13 @@ pub fn another_emitter() -> EmitterOptions {
         end: Point(400., 400.),
     }));
 
-    let trail_handler = TrailHandler::new(10, 64);
+    let trail_handler = TrailHandler::new(TrailOptions {
+        trail_length: 10,
+        update_ms: 32,
+        opacity_from: 0.0,
+        opacity_to: 0.9,
+        diameter_fraction: 0.7,
+    });
 
     //let texture: Texture2D = load_texture("assets/bubble.png").await.unwrap();
 

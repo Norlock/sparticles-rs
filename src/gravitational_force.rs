@@ -1,5 +1,3 @@
-use macroquad::prelude::{draw_circle, Color};
-
 use crate::force::{Force, ForceData};
 use crate::point::Point;
 
@@ -25,7 +23,7 @@ impl GravitationalForce {
         let x = self.start.0 + fraction * (self.end.0 - self.start.0);
         let y = self.start.1 + fraction * (self.end.1 - self.start.1);
 
-        return Point(x, y);
+        Point(x, y)
     }
 }
 

@@ -2,7 +2,10 @@ use crate::animation::AnimationData;
 use crate::animation_handler::AnimationHandler;
 use crate::animation_handler::AnimationOptions;
 use crate::collision::CollisionData;
+use crate::point::Point;
+use crate::trail_animation::TrailPoint;
 use macroquad::prelude::*;
+use std::rc::Rc;
 use std::time::Instant;
 
 use crate::position::Position;
@@ -23,8 +26,9 @@ pub struct Particle {
     pub elasticity: f32,
     /// number between 0 and 1. E.g. 0.008
     pub friction_coefficient: f32,
-    pub lifetime: Instant,
+    pub lifetime: Rc<Instant>,
     pub animation_handler: Option<AnimationHandler>,
+    pub trail: Vec<TrailPoint>,
 }
 
 pub struct ParticleAttributes {
@@ -41,7 +45,7 @@ pub struct ParticleAttributes {
 }
 
 impl Particle {
-    pub fn new(x: f32, y: f32, attributes: &ParticleAttributes) -> Self {
+    pub fn new(x: f32, y: f32, attributes: &ParticleAttributes, lifetime: Rc<Instant>) -> Self {
         let animation_handler = AnimationHandler::new(&attributes.animation_options);
 
         Self {
@@ -50,14 +54,15 @@ impl Particle {
             vx: 0.,
             vy: 0.,
             friction_coefficient: attributes.friction_coefficient,
-            color: attributes.color.clone(),
+            color: attributes.color,
             texture: attributes.texture,
             radius: attributes.diameter / 2.,
             diameter: attributes.diameter,
             elasticity: attributes.elasticity,
             mass: attributes.mass,
             queue_frame: u64::MAX,
-            lifetime: Instant::now(),
+            lifetime,
+            trail: Vec::new(),
             animation_handler,
         }
     }
@@ -100,12 +105,10 @@ impl Particle {
                 } else {
                     self.x = end_other_new_x + self.vx + 0.01;
                 }
+            } else if 0. <= other.vx {
+                self.x = other_new_x - self.diameter - other.vx - 0.01;
             } else {
-                if 0. <= other.vx {
-                    self.x = other_new_x - self.diameter - other.vx - 0.01;
-                } else {
-                    self.x = other_new_x - self.diameter + other.vx - 0.01;
-                }
+                self.x = other_new_x - self.diameter + other.vx - 0.01;
             }
         } else {
             if collision_self_placed_bottom {
@@ -114,12 +117,10 @@ impl Particle {
                 } else {
                     self.y = end_other_new_y + self.vy + 0.01;
                 }
+            } else if 0. <= other.vy {
+                self.y = other_new_y - self.diameter - other.vy - 0.01;
             } else {
-                if 0. <= other.vy {
-                    self.y = other_new_y - self.diameter - other.vy - 0.01;
-                } else {
-                    self.y = other_new_y - self.diameter + other.vy - 0.01;
-                }
+                self.y = other_new_y - self.diameter + other.vy - 0.01;
             }
         }
     }
@@ -181,16 +182,19 @@ impl Particle {
         other.vx = other_vy * other.elasticity;
 
         self.move_if_overlaps(other);
-        return true;
+        true
     }
 
-    pub fn animate(&mut self) {
+    pub fn animate(&mut self, grid_position: &Position) {
         if let Some(animator) = &mut self.animation_handler {
+            let point_abs = Point(self.x + grid_position.x, self.y + grid_position.y);
             let mut data = AnimationData {
                 color: self.color,
                 radius: self.radius,
                 vx: self.vx,
                 vy: self.vy,
+                point_abs,
+                trail_abs: &mut self.trail,
             };
 
             let elapsed_ms = self.lifetime.elapsed().as_millis();

@@ -1,11 +1,11 @@
 use crate::animation::Animate;
 use crate::constant_force::ConstantForce;
 use crate::gravitational_force::GravitationalForce;
+use crate::movement_handler::MovementHandler;
 use crate::point::Point;
 use crate::size_animation::SizeAnimation;
 use crate::stray_animation::StrayAnimation;
-use crate::trail_handler::TrailHandler;
-use crate::trail_handler::TrailOptions;
+use crate::trail_animation::{TrailAnimation, TrailOptions};
 use std::time::Duration;
 
 use crate::accelerating_force::AcceleratingForce;
@@ -53,6 +53,16 @@ pub fn smoke() -> EmitterOptions {
         end_radius: 2.,
     }));
 
+    let trail_animation = Box::new(TrailAnimation::new(TrailOptions {
+        trail_length: 12,
+        iteration_length_ms: 32,
+        opacity_from: 0.0,
+        opacity_to: 0.8,
+        diameter_fraction: 1.,
+        from_ms: 1_000,
+        until_ms: 3_000,
+    }));
+
     let animation_options = AnimationOptions::new(4000, StartAnimationAt::Zero, animations);
 
     let mut force_handler = ForceHandler::new(Duration::from_secs(4));
@@ -75,21 +85,12 @@ pub fn smoke() -> EmitterOptions {
         max_vy: -2.,
     }));
 
-    let trail_handler = TrailHandler::new(TrailOptions {
-        trail_length: 10,
-        update_ms: 64,
-        opacity_from: 0.0,
-        opacity_to: 0.8,
-        diameter_fraction: 1.,
-    });
-
     EmitterOptions {
         emitter_position: Position::new(300., 300.),
         emitter_diameter: 100.,
         emitter_duration: Duration::from_secs(10),
         angle_degrees: 135.,
         emission_distortion_px: 0.,
-        trail_handler: Some(trail_handler),
         delay_between_emission: Duration::from_millis(2500),
         diffusion_degrees: 360.,
         particle_color: Color::from_rgba(200, 100, 1, 255),
@@ -101,8 +102,9 @@ pub fn smoke() -> EmitterOptions {
         particle_speed: 2.2,
         particle_friction_coefficient: 0.01,
         respect_grid_bounds: true,
-        animation_options: Some(animation_options),
+        particle_animation_options: Some(animation_options),
         force_handler: Some(force_handler),
+        emitter_animation_handler: None,
     }
 }
 
@@ -123,10 +125,19 @@ pub fn another_emitter() -> EmitterOptions {
         until_ms: 3_000,
     }));
 
+    animations.push(Box::new(TrailAnimation::new(TrailOptions {
+        from_ms: 200,
+        until_ms: 3_000,
+        trail_length: 10,
+        iteration_length_ms: 32,
+        opacity_from: 0.0,
+        opacity_to: 0.9,
+        diameter_fraction: 0.7,
+    })));
+
     animations.push(Box::new(StrayAnimation::new(1_000, 3_000, 10.)));
 
-    let animation_options =
-        AnimationOptions::new(3_000, StartAnimationAt::RangeMs(0, 100), animations);
+    let animation_options = AnimationOptions::new(3_000, StartAnimationAt::Zero, animations);
 
     let mut force_handler = ForceHandler::new(Duration::from_secs(10));
     force_handler.add(Box::new(GravitationalForce {
@@ -149,15 +160,7 @@ pub fn another_emitter() -> EmitterOptions {
         end: Point(400., 400.),
     }));
 
-    let trail_handler = TrailHandler::new(TrailOptions {
-        trail_length: 10,
-        update_ms: 32,
-        opacity_from: 0.0,
-        opacity_to: 0.9,
-        diameter_fraction: 0.7,
-    });
-
-    //let texture: Texture2D = load_texture("assets/bubble.png").await.unwrap();
+    let movement_handler = MovementHandler::new(1.);
 
     EmitterOptions {
         emitter_position: Position::new(300., 200.),
@@ -165,7 +168,6 @@ pub fn another_emitter() -> EmitterOptions {
         emitter_duration: Duration::from_secs(10),
         angle_degrees: 135.,
         emission_distortion_px: 3.,
-        trail_handler: Some(trail_handler),
         delay_between_emission: Duration::from_millis(100),
         diffusion_degrees: 70.,
         particle_color: Color::from_rgba(10, 0, 250, 255),
@@ -177,8 +179,9 @@ pub fn another_emitter() -> EmitterOptions {
         particle_friction_coefficient: 0.007,
         particle_speed: 2.5,
         respect_grid_bounds: true,
-        animation_options: Some(animation_options),
+        particle_animation_options: Some(animation_options),
         force_handler: Some(force_handler),
+        emitter_animation_handler: None,
     }
 }
 

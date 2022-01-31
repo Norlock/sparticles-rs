@@ -8,12 +8,15 @@ mod color_animation;
 mod constant_force;
 mod container;
 mod emitter;
+mod emitter_animation;
+mod emitter_animation_handler;
 mod fill_style;
 mod force;
 mod force_handler;
 mod forcer;
 mod gravitational_force;
 mod grid;
+mod movement_handler;
 mod particle;
 mod pattern;
 mod point;
@@ -21,7 +24,7 @@ mod position;
 mod size_animation;
 mod stray_animation;
 mod swarm_emitter;
-mod trail_handler;
+mod trail_animation;
 
 use grid::{Grid, GridOptions};
 
@@ -71,7 +74,7 @@ async fn main() {
     grid.fill(&attributes, 50, FillStyle::WhiteNoise);
 
     let attributes = ParticleAttributes {
-        color: Color::from_rgba(20, 255, 255, 255),
+        color: Color::from_rgba(231, 196, 150, 255),
         texture: None,
         friction_coefficient: 0.008,
         diameter: 7.,
@@ -85,6 +88,7 @@ async fn main() {
     //grid.add_emitter(smoke());
     grid.add_emitter(another_emitter());
 
+    //let color = Color::from_rgba(0, 26, 51, 255);
     loop {
         clear_background(BLACK);
 

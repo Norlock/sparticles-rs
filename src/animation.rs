@@ -1,5 +1,8 @@
+use crate::point::Point;
 use macroquad::prelude::Color;
 use std::fmt::Debug;
+
+use crate::trail_animation::TrailPoint;
 
 pub trait Animate {
     fn animate(&self, data: &mut AnimationData, animation_cycle_ms: u128);
@@ -11,9 +14,13 @@ impl Debug for dyn Animate {
     }
 }
 
-pub struct AnimationData {
+pub struct AnimationData<'a> {
     pub color: Color,
     pub radius: f32,
     pub vx: f32,
     pub vy: f32,
+
+    /// Includes grid position
+    pub point_abs: Point,
+    pub trail_abs: &'a mut Vec<TrailPoint>,
 }

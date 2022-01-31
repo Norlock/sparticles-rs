@@ -2,7 +2,6 @@ use crate::animation::{Animate, AnimationData};
 use macroquad::prelude::rand;
 use std::fmt::Debug;
 use std::rc::Rc;
-use std::time::Instant;
 
 #[derive(Debug)]
 pub struct AnimationHandler {

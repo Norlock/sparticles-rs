@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::{rc::Rc, time::Instant};
 
 use crate::{
     collision::CollisionData,
@@ -52,7 +52,7 @@ fn create_possibility_grid(
         }
     }
 
-    return spots;
+    spots
 }
 
 impl Grid {
@@ -144,7 +144,7 @@ impl Grid {
                 return true;
             }
         }
-        return false;
+        false
     }
 
     fn handle_collision(&mut self, particle: &mut Particle, data: &mut CollisionData) -> usize {
@@ -248,7 +248,7 @@ impl Grid {
         }
 
         particle.apply_friction();
-        particle.animate();
+        particle.animate(&self.position);
 
         let mut data = CollisionData {
             new_x,
@@ -266,7 +266,7 @@ impl Grid {
     }
 
     pub fn fill(&mut self, attributes: &ParticleAttributes, count: u32, fill_style: FillStyle) {
-        self.particle_count = self.particle_count + count;
+        self.particle_count += count;
 
         match fill_style {
             FillStyle::WhiteNoise => self.fill_white_noise(attributes, count),
@@ -393,18 +393,25 @@ impl Grid {
 
     fn fill_white_noise(&mut self, attributes: &ParticleAttributes, count: u32) {
         let mut i: u32 = 0;
+        let lifetime = Rc::new(Instant::now());
         while i < count {
             let x_coord = rand::gen_range(0., self.position.width);
             let y_coord = rand::gen_range(0., self.position.height);
             if !self.possibility_taken(x_coord, y_coord) {
-                self.add_particle(x_coord, y_coord, &attributes);
-                i = i + 1;
+                self.add_particle(x_coord, y_coord, attributes, lifetime.clone());
+                i += 1;
             }
         }
     }
 
-    fn add_particle(&mut self, x_coord: f32, y_coord: f32, attributes: &ParticleAttributes) {
-        let particle = Particle::new(x_coord, y_coord, attributes);
+    fn add_particle(
+        &mut self,
+        x_coord: f32,
+        y_coord: f32,
+        attributes: &ParticleAttributes,
+        lifetime: Rc<Instant>,
+    ) {
+        let particle = Particle::new(x_coord, y_coord, attributes, lifetime);
         let poss_x_index = self.possibility_x_index(x_coord);
         let poss_y_index = self.possibility_y_index(y_coord);
         let poss_index = self.possibility_index(poss_x_index, poss_y_index);

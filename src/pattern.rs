@@ -49,19 +49,25 @@ pub fn smoke() -> EmitterOptions {
     animations.push(Box::new(SizeAnimation {
         from_ms: 0,
         until_ms: 1000,
-        start_radius: 5.,
-        end_radius: 2.,
+        start_radius: 1.,
+        end_radius: 4.,
     }));
 
-    let trail_animation = Box::new(TrailAnimation::new(TrailOptions {
-        trail_length: 12,
-        iteration_length_ms: 32,
-        opacity_from: 0.0,
-        opacity_to: 0.8,
-        diameter_fraction: 1.,
-        from_ms: 1_000,
-        until_ms: 3_000,
-    }));
+    animations.push(Box::new(TrailAnimation::new(TrailOptions {
+        new_line_point_ms: 32,
+        opacity_loss_per_point: 1. / 12.,
+        diameter_fraction: 0.8,
+        from_ms: 0_000,
+        until_ms: 1_000,
+    })));
+
+    animations.push(Box::new(TrailAnimation::new(TrailOptions {
+        new_line_point_ms: 32,
+        opacity_loss_per_point: 1. / 12.,
+        diameter_fraction: 0.8,
+        from_ms: 1_500,
+        until_ms: 2_500,
+    })));
 
     let animation_options = AnimationOptions::new(4000, StartAnimationAt::Zero, animations);
 
@@ -128,10 +134,8 @@ pub fn another_emitter() -> EmitterOptions {
     animations.push(Box::new(TrailAnimation::new(TrailOptions {
         from_ms: 200,
         until_ms: 3_000,
-        trail_length: 10,
-        iteration_length_ms: 32,
-        opacity_from: 0.0,
-        opacity_to: 0.9,
+        new_line_point_ms: 32,
+        opacity_loss_per_point: 0.1,
         diameter_fraction: 0.7,
     })));
 

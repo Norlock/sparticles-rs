@@ -166,6 +166,7 @@ impl Emitter {
             anim_handler.animate(&mut data, elapsed_ms);
 
             self.angle_emission_radians = data.angle_radians + INVERSE_RADIANS;
+            self.diffusion_radians = data.diffusion_radians;
         }
     }
 

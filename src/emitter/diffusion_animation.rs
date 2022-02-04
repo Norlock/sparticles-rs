@@ -9,7 +9,7 @@ pub struct DiffusionAnimation {
 }
 
 impl EmitterAnimate for DiffusionAnimation {
-    fn animate(&self, data: &mut EmitterData, cycle_ms: u32) {
+    fn animate(&mut self, data: &mut EmitterData, cycle_ms: u32) {
         if cycle_ms < self.from_ms || self.until_ms <= cycle_ms {
             return;
         }

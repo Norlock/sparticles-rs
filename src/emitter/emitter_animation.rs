@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
 pub trait EmitterAnimate {
-    fn animate(&self, data: &mut EmitterData, cycle_ms: u32);
+    fn animate(&mut self, data: &mut EmitterData, cycle_ms: u32);
 }
 
 impl Debug for dyn EmitterAnimate {

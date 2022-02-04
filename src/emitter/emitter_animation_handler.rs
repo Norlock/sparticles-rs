@@ -14,9 +14,9 @@ impl EmitterAnimationHandler {
         }
     }
 
-    pub fn animate(&self, data: &mut EmitterData, elapsed_ms: u128) {
+    pub fn animate(&mut self, data: &mut EmitterData, elapsed_ms: u128) {
         let cycle_ms = elapsed_ms as u32 % self.duration_ms;
-        for animation in self.animations.iter() {
+        for animation in self.animations.iter_mut() {
             animation.animate(data, cycle_ms);
         }
     }

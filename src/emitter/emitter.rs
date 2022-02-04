@@ -148,7 +148,7 @@ impl Emitter {
     }
 
     fn animate_emitter(&mut self, elapsed_ms: u128) {
-        if let Some(anim_handler) = &self.emitter_animation_handler {
+        if let Some(anim_handler) = &mut self.emitter_animation_handler {
             let mut data = EmitterData {
                 delay_between_emission_ms: self.delay_between_emission_ms,
                 particle_speed: self.particle_speed,
@@ -167,6 +167,8 @@ impl Emitter {
 
             self.angle_emission_radians = data.angle_radians + INVERSE_RADIANS;
             self.diffusion_radians = data.diffusion_radians;
+            self.x = data.x;
+            self.y = data.y;
         }
     }
 

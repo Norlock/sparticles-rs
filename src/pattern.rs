@@ -8,12 +8,12 @@ use crate::emitter::diffusion_animation::DiffusionAnimation;
 use crate::emitter::emitter::EmitterOptions;
 use crate::emitter::emitter_animation::EmitterAnimate;
 use crate::emitter::emitter_animation_handler::EmitterAnimationHandler;
+use crate::emitter::loose_movement_animation::LooseMovementAnimation;
 use crate::emitter::sway_animation::SwayAnimation;
 use crate::force::accelerating_force::AcceleratingForce;
 use crate::force::constant_force::ConstantForce;
 use crate::force::force_handler::ForceHandler;
 use crate::force::gravitational_force::GravitationalForce;
-use crate::movement_handler::MovementHandler;
 use crate::point::Point;
 use crate::trail::trail_animation::TrailAnimation;
 use crate::trail::trail_animation::TrailOptions;
@@ -184,8 +184,32 @@ fn sway_and_diffusion_animation() -> Option<EmitterAnimationHandler> {
         end_diffusion_degrees: 125.,
     });
 
-    let animations: Vec<Box<dyn EmitterAnimate>> =
-        vec![sway_1, sway_2, sway_3, sway_4, diffusion_1, diffusion_2];
+    let movement_1 = Box::new(LooseMovementAnimation {
+        from_ms: 0,
+        until_ms: 3000,
+        vx: 0.4,
+        vy: 1.0,
+        stray_radians: 2_f32.to_radians(),
+    });
+
+    let movement_2 = Box::new(LooseMovementAnimation {
+        from_ms: 3000,
+        until_ms: 4000,
+        vx: -1.7,
+        vy: -0.5,
+        stray_radians: 2_f32.to_radians(),
+    });
+
+    let animations: Vec<Box<dyn EmitterAnimate>> = vec![
+        sway_1,
+        sway_2,
+        sway_3,
+        sway_4,
+        diffusion_1,
+        diffusion_2,
+        movement_1,
+        movement_2,
+    ];
 
     Some(EmitterAnimationHandler::new(4000, animations))
 }

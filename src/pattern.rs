@@ -6,6 +6,7 @@ use crate::point::Point;
 use crate::size_animation::SizeAnimation;
 use crate::stray_animation::StrayAnimation;
 use crate::trail_animation::{TrailAnimation, TrailOptions};
+use crate::trail_handler::TrailHandler;
 use std::time::Duration;
 
 use crate::accelerating_force::AcceleratingForce;
@@ -36,6 +37,21 @@ pub fn shimmer_animations() -> AnimationOptions {
     AnimationOptions::new(4000, StartAnimationAt::RangeMs(0, 1000), animations)
 }
 
+pub fn trail_animation() -> TrailHandler {
+    let trail_animations = vec![TrailAnimation::new(TrailOptions {
+        update_ms: 16,
+        opacity_loss_per_update: 1. / 3.,
+        diameter_fraction: 0.5,
+        from_ms: 0_000,
+        until_ms: 10_000,
+    })];
+
+    TrailHandler {
+        duration_ms: 10_000,
+        trail_animations,
+    }
+}
+
 pub fn smoke() -> EmitterOptions {
     let mut animations: Vec<Box<dyn Animate>> = Vec::new();
 
@@ -50,24 +66,28 @@ pub fn smoke() -> EmitterOptions {
         from_ms: 0,
         until_ms: 1000,
         start_radius: 1.,
-        end_radius: 4.,
+        end_radius: 3.,
     }));
 
-    animations.push(Box::new(TrailAnimation::new(TrailOptions {
-        new_line_point_ms: 32,
-        opacity_loss_per_point: 1. / 12.,
-        diameter_fraction: 0.8,
+    let trail_anim_1 = TrailAnimation::new(TrailOptions {
+        update_ms: 32,
+        opacity_loss_per_update: 1. / 6.,
+        diameter_fraction: 0.7,
         from_ms: 0_000,
         until_ms: 1_000,
-    })));
+    });
+    let trail_anim_2 = TrailAnimation::new(TrailOptions {
+        update_ms: 32,
+        opacity_loss_per_update: 1. / 5.,
+        diameter_fraction: 0.9,
+        from_ms: 1_700,
+        until_ms: 3_330,
+    });
 
-    animations.push(Box::new(TrailAnimation::new(TrailOptions {
-        new_line_point_ms: 32,
-        opacity_loss_per_point: 1. / 12.,
-        diameter_fraction: 0.8,
-        from_ms: 1_500,
-        until_ms: 2_500,
-    })));
+    let trail_handler = TrailHandler {
+        duration_ms: 4000,
+        trail_animations: vec![trail_anim_1, trail_anim_2],
+    };
 
     let animation_options = AnimationOptions::new(4000, StartAnimationAt::Zero, animations);
 
@@ -111,6 +131,7 @@ pub fn smoke() -> EmitterOptions {
         particle_animation_options: Some(animation_options),
         force_handler: Some(force_handler),
         emitter_animation_handler: None,
+        trail_handler: Some(trail_handler),
     }
 }
 
@@ -131,17 +152,17 @@ pub fn another_emitter() -> EmitterOptions {
         until_ms: 3_000,
     }));
 
-    animations.push(Box::new(TrailAnimation::new(TrailOptions {
-        from_ms: 200,
-        until_ms: 3_000,
-        new_line_point_ms: 32,
-        opacity_loss_per_point: 0.1,
-        diameter_fraction: 0.7,
-    })));
-
     animations.push(Box::new(StrayAnimation::new(1_000, 3_000, 10.)));
 
     let animation_options = AnimationOptions::new(3_000, StartAnimationAt::Zero, animations);
+
+    let trail_animations = vec![TrailAnimation::new(TrailOptions {
+        from_ms: 0,
+        until_ms: 3_000,
+        update_ms: 32,
+        opacity_loss_per_update: 0.1,
+        diameter_fraction: 0.7,
+    })];
 
     let mut force_handler = ForceHandler::new(Duration::from_secs(10));
     force_handler.add(Box::new(GravitationalForce {
@@ -186,6 +207,7 @@ pub fn another_emitter() -> EmitterOptions {
         particle_animation_options: Some(animation_options),
         force_handler: Some(force_handler),
         emitter_animation_handler: None,
+        trail_handler: None,
     }
 }
 

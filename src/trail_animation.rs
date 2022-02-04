@@ -1,124 +1,125 @@
-use crate::animation::Animate;
 use macroquad::prelude::*;
+use std::collections::VecDeque;
 
-use crate::animation::AnimationData;
-
+#[derive(Debug, Clone)]
 pub struct TrailAnimation {
-    /// When to update trail, (lower == ^ precision / higher == ^ performance).
+    /// When to update trail, (lower is more precision / higher is better performance).
     /// 32ms is a good starting point.
-    new_line_point_ms: u128,
+    update_ms: u32,
 
-    trail_length: usize,
     /// number between 0..1 (e.g. 0.1)
-    opacity_loss_per_point: f32,
+    opacity_loss_per_update: f32,
 
     diameter_fraction: f32,
-    from_ms: u128,
-    until_ms: u128,
+    from_ms: u32,
+    until_ms: u32,
+    trail: VecDeque<TrailPoint>,
+    iteration: u32,
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct TrailPoint {
-    pub x: f32,
-    pub y: f32,
-    pub color: Color,
-    pub iteration: u16,
+struct TrailPoint {
+    x: f32,
+    y: f32,
+    color: Color,
+    diameter: f32,
+    line_end: bool,
 }
 
 pub struct TrailOptions {
     /// When to update trail, (lower == ^ precision / higher == ^ performance).
-    pub new_line_point_ms: u128,
+    /// Min is 16.
+    pub update_ms: u32,
     /// number between 0..1
-    pub opacity_loss_per_point: f32,
+    pub opacity_loss_per_update: f32,
     /// Diameter fraction from 0..1
     pub diameter_fraction: f32,
 
-    pub from_ms: u128,
-    pub until_ms: u128,
+    pub from_ms: u32,
+    pub until_ms: u32,
+}
+
+pub struct TrailData {
+    pub x_abs: f32,
+    pub y_abs: f32,
+    pub color: Color,
+    pub radius: f32,
 }
 
 impl TrailAnimation {
     pub fn new(options: TrailOptions) -> Self {
         let TrailOptions {
-            new_line_point_ms,
-            opacity_loss_per_point,
+            mut update_ms,
+            opacity_loss_per_update,
             diameter_fraction,
             from_ms,
             until_ms,
         } = options;
 
-        let trail_length = (1. / opacity_loss_per_point).ceil() as usize;
+        update_ms = update_ms.max(16);
 
         Self {
             from_ms,
             until_ms,
-            new_line_point_ms,
-            trail_length,
-            opacity_loss_per_point,
+            update_ms,
+            opacity_loss_per_update,
             diameter_fraction,
+            iteration: 0,
+            trail: VecDeque::new(),
         }
     }
 
-    fn draw(&self, data: &mut AnimationData, new_iteration: u16) {
-        let diameter = data.radius * 2. * self.diameter_fraction;
+    pub fn animate(&mut self, data: &mut TrailData, cycle_ms: u32) {
+        let new_iteration = cycle_ms / self.update_ms;
 
-        data.trail_abs.iter_mut().reduce(|from, to| {
-            let point_difference = new_iteration - from.iteration;
-            let alpha_loss = self.opacity_loss_per_point * point_difference as f32;
-            from.color.a = 1. - alpha_loss;
+        let is_in_cycle = self.from_ms <= cycle_ms && cycle_ms < self.until_ms;
+        let is_new_iteration = self.iteration != new_iteration;
 
-            if alpha_loss < 1. && from.iteration + 1 == to.iteration {
-                draw_line(from.x, from.y, to.x, to.y, diameter, from.color);
+        self.trail.iter_mut().reduce(|from, to| {
+            if is_new_iteration {
+                from.color.a -= self.opacity_loss_per_update;
             }
+
+            if !from.line_end {
+                draw_line(from.x, from.y, to.x, to.y, to.diameter, to.color);
+            }
+
             to
         });
-    }
 
-    fn clean_up_trail(&self, data: &mut AnimationData) {
-        data.trail_abs
-            .retain(|trail_point| 0. < trail_point.color.a);
-    }
-
-    fn update_last(&self, data: &mut AnimationData) {
-        let last = &mut data.trail_abs.last_mut().unwrap();
-        // Iteration stays unchanged.
-        last.x = data.point_abs.0;
-        last.y = data.point_abs.1;
-        last.color = data.color;
-    }
-}
-
-impl Animate for TrailAnimation {
-    fn animate(&self, data: &mut AnimationData<'_>, elapsed_ms: u128) {
-        let new_iteration = (elapsed_ms / self.new_line_point_ms) as u16;
-        if elapsed_ms < self.from_ms || self.until_ms <= elapsed_ms {
-            self.draw(data, new_iteration);
-            self.clean_up_trail(data);
-            return;
+        if is_new_iteration {
+            self.iteration = new_iteration;
+            self.trail.retain(|point| point.color.a.is_sign_positive());
         }
 
-        let create_trail_point = || TrailPoint {
-            color: data.color,
-            iteration: new_iteration,
-            x: data.point_abs.0,
-            y: data.point_abs.1,
-        };
+        if is_in_cycle {
+            let diameter = data.radius * 2. * self.diameter_fraction;
+            let new_x = data.x_abs;
+            let new_y = data.y_abs;
 
-        if data.trail_abs.is_empty() {
-            data.trail_abs.push(create_trail_point());
-            return;
-        }
+            let create_new_point = || TrailPoint {
+                color: data.color,
+                x: new_x,
+                y: new_y,
+                line_end: false,
+                diameter,
+            };
 
-        let last_point = data.trail_abs.last().unwrap();
-        if last_point.iteration < new_iteration {
-            if self.trail_length == data.trail_abs.len() {
-                data.trail_abs.drain(0..1);
+            if self.trail.is_empty() || is_new_iteration {
+                self.trail.push_back(create_new_point());
+            } else {
+                let last_index = self.trail.len() - 1;
+                let lp = &mut self.trail[last_index];
+                lp.x = new_x;
+                lp.y = new_y;
+                lp.color = data.color;
+                lp.diameter = diameter;
             }
-            data.trail_abs.push(create_trail_point());
         } else {
-            self.update_last(data);
+            self.trail
+                .iter_mut()
+                .last()
+                .map(|last_point| last_point.line_end = true);
         }
-
-        self.draw(data, new_iteration);
     }
 }

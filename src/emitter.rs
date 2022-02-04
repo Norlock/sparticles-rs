@@ -4,9 +4,9 @@ use crate::{
     emitter_animation_handler::EmitterAnimationHandler,
     force::ForceData,
     force_handler::ForceHandler,
-    point::Point,
     position::Position,
-    trail_animation::TrailPoint,
+    trail_animation::{TrailAnimation, TrailData},
+    trail_handler::TrailHandler,
 };
 use macroquad::prelude::*;
 use std::rc::Rc;
@@ -36,6 +36,7 @@ pub struct EmitterOptions {
     pub particle_animation_options: Option<AnimationOptions>,
     pub emitter_animation_handler: Option<EmitterAnimationHandler>,
     pub force_handler: Option<ForceHandler>,
+    pub trail_handler: Option<TrailHandler>,
 }
 
 #[derive(Debug)]
@@ -54,11 +55,12 @@ pub struct Emitter {
     delay_between_emission_ms: u128,
     emission_distortion: f32,
     current_emission: i32,
-    particle_lifetime: Duration,
+    particle_lifetime_ms: u128,
     particle_radius: f32,
     particle_mass: f32,
     particle_speed: f32,
     particle_friction_coefficient: f32,
+    trail_handler: Option<TrailHandler>,
     particles: Vec<EmittedParticle>,
     lifetime: Instant,
     emitter_duration: Duration,
@@ -77,12 +79,12 @@ struct EmittedParticle {
     radius: f32,
     lifetime: Rc<Instant>,
     color: Color,
-    trail: Vec<TrailPoint>,
+    trail_handler: Option<TrailHandler>,
     animation_handler: Option<AnimationHandler>,
 }
 
 impl Emitter {
-    pub fn new(grid_position: &Position, options: EmitterOptions) -> Self {
+    pub fn new(grid_position: Position, options: EmitterOptions) -> Self {
         let EmitterOptions {
             emitter_position,
             emitter_diameter,
@@ -103,6 +105,7 @@ impl Emitter {
             particle_animation_options,
             emitter_animation_handler,
             force_handler,
+            trail_handler,
         } = options;
 
         let angle_radians = angle_degrees.to_radians();
@@ -121,11 +124,11 @@ impl Emitter {
             particle_radius,
             x,
             y,
-            grid_position: grid_position.clone(),
+            grid_position,
             angle_radians,
             angle_emission_radians,
             emission_distortion: emission_distortion_px,
-            particle_lifetime,
+            particle_lifetime_ms: particle_lifetime.as_millis(),
             emitter_diameter,
             emitter_duration,
             lifetime: Instant::now(),
@@ -137,26 +140,24 @@ impl Emitter {
             particle_animation_options,
             emitter_animation_handler,
             force_handler,
+            trail_handler,
             delete: false,
         }
     }
 
     pub fn emit(&mut self) {
         let elapsed = self.lifetime.elapsed();
-        let time_elapsed = elapsed > self.emitter_duration;
-        let new_emission = (elapsed.as_millis() / self.delay_between_emission_ms) as i32;
+        let overdue = elapsed > self.emitter_duration;
+        let emitter_elapsed_ms = elapsed.as_millis();
+        let new_emission = (emitter_elapsed_ms / self.delay_between_emission_ms) as i32;
 
-        if !time_elapsed && self.current_emission < new_emission {
+        if !overdue && self.current_emission < new_emission {
             self.current_emission = new_emission;
             let lifetime = Rc::new(Instant::now());
             for _ in 0..self.particles_per_emission {
                 self.particles
                     .push(self.create_particle(Rc::clone(&lifetime)));
             }
-        }
-
-        if let Some(force_handler) = &mut self.force_handler {
-            force_handler.update(&self.lifetime);
         }
 
         for i in (0..self.particles.len()).rev() {
@@ -181,7 +182,7 @@ impl Emitter {
                     mass: self.particle_mass,
                 };
 
-                force_handler.apply(&mut data);
+                force_handler.apply(&mut data, emitter_elapsed_ms);
 
                 particle.vx = data.vx;
                 particle.vy = data.vy;
@@ -190,23 +191,17 @@ impl Emitter {
                 particle.vy = vy;
             }
 
-            if let Some(animation_handler) = &mut particle.animation_handler {
-                let point_abs = Point(
-                    particle.x + self.grid_position.x,
-                    particle.y + self.grid_position.y,
-                );
+            let particle_elapsed_ms = particle.lifetime.elapsed().as_millis();
 
+            if let Some(animation_handler) = &mut particle.animation_handler {
                 let mut data: AnimationData = AnimationData {
                     radius: particle.radius,
                     color: particle.color,
                     vx: particle.vx,
                     vy: particle.vy,
-                    point_abs,
-                    trail_abs: &mut particle.trail,
                 };
 
-                let elapsed_ms = particle.lifetime.elapsed().as_millis();
-                animation_handler.animate(&mut data, elapsed_ms);
+                animation_handler.animate(&mut data, particle_elapsed_ms);
                 particle.vx = data.vx;
                 particle.vy = data.vy;
                 particle.color = data.color;
@@ -218,6 +213,17 @@ impl Emitter {
 
             let x = particle.x + self.grid_position.x;
             let y = particle.y + self.grid_position.y;
+
+            if let Some(trail_handler) = &mut particle.trail_handler {
+                let mut data = TrailData {
+                    radius: particle.radius,
+                    color: particle.color,
+                    x_abs: x,
+                    y_abs: y,
+                };
+
+                trail_handler.animate(&mut data, particle_elapsed_ms);
+            }
 
             if let Some(texture) = self.particle_texture {
                 let side = particle.radius * 2.;
@@ -242,12 +248,12 @@ impl Emitter {
                     || self.grid_position.height < particle.y + diameter)
             {
                 continue; // removes particle.
-            } else if particle.lifetime.elapsed() <= self.particle_lifetime {
+            } else if particle_elapsed_ms <= self.particle_lifetime_ms {
                 self.particles.push(particle);
             }
         }
 
-        if self.particles.is_empty() && time_elapsed {
+        if self.particles.is_empty() && overdue {
             self.delete = true;
         }
     }
@@ -274,7 +280,7 @@ impl Emitter {
             lifetime,
             radius: self.particle_radius,
             color: self.particle_color,
-            trail: Vec::new(),
+            trail_handler: self.trail_handler.clone(),
             animation_handler,
         }
     }

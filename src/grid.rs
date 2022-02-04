@@ -1,4 +1,7 @@
-use std::{rc::Rc, time::Instant};
+use std::{
+    rc::Rc,
+    time::{Instant, SystemTime},
+};
 
 use crate::{
     collision::CollisionData,
@@ -24,6 +27,7 @@ pub struct Grid {
     pub cell_width: usize,
     pub cell_height: usize,
     pub duration: u128,
+    pub fps: i32,
     pub particle_count: u32,
     pub force_handler: Option<ForceHandler>,
     pub emitters: Vec<Emitter>,
@@ -85,6 +89,7 @@ impl Grid {
             cell_height,
             frame: 0,
             duration: 0,
+            fps: 0,
             particle_count: 0,
             force_handler,
             emitters: Vec::new(),
@@ -197,7 +202,7 @@ impl Grid {
         new_vec_index
     }
 
-    fn update_spot(&mut self, vec_index: usize, spot_index: usize) {
+    fn update_spot(&mut self, vec_index: usize, spot_index: usize, elapsed_ms: u128) {
         let mut particle = self.possibility_spots[vec_index].swap_remove(spot_index);
 
         let mut data = ForceData {
@@ -210,7 +215,7 @@ impl Grid {
         };
 
         if let Some(force_handler) = &mut self.force_handler {
-            force_handler.apply(&mut data);
+            force_handler.apply(&mut data, elapsed_ms);
             particle.vx = data.vx;
             particle.vy = data.vy;
         }
@@ -248,7 +253,7 @@ impl Grid {
         }
 
         particle.apply_friction();
-        particle.animate(&self.position);
+        particle.animate();
 
         let mut data = CollisionData {
             new_x,
@@ -274,22 +279,16 @@ impl Grid {
     }
 
     pub fn add_emitter(&mut self, options: EmitterOptions) {
-        let emitter = Emitter::new(&self.position, options);
-        self.emitters.push(emitter);
+        self.emitters.push(Emitter::new(self.position, options));
     }
 
     pub fn draw(&mut self) {
-        let calculate_performance = self.frame % 50 == 0;
-
-        let start = if calculate_performance {
-            self.lifetime.elapsed().as_micros()
-        } else {
-            0
-        };
-
-        if let Some(force_handler) = &mut self.force_handler {
-            force_handler.update(&self.lifetime);
+        let update_perfs = self.frame % 50 == 0;
+        if update_perfs {
+            self.duration = self.lifetime.elapsed().as_micros();
         }
+
+        let elapsed_ms = self.lifetime.elapsed().as_millis();
 
         for vec_index in 0..self.possibility_spots.len() {
             for spot_index in (0..self.possibility_spots[vec_index].len()).rev() {
@@ -297,7 +296,7 @@ impl Grid {
                     continue;
                 }
 
-                self.update_spot(vec_index, spot_index);
+                self.update_spot(vec_index, spot_index, elapsed_ms);
             }
         }
 
@@ -310,17 +309,18 @@ impl Grid {
             }
         }
 
-        if calculate_performance {
-            let end = self.lifetime.elapsed().as_micros();
-            self.duration = end - start;
-        }
-
         self.frame += 1;
+
+        if update_perfs {
+            let end = self.lifetime.elapsed().as_micros();
+            self.duration = end - self.duration;
+            self.fps = get_fps();
+        }
     }
 
-    pub fn draw_ui(&self) {
+    pub fn draw_ui(&mut self) {
         draw_text(
-            format!("particle count: {}", self.particle_count).as_str(),
+            format!("Particle count: {}", self.particle_count).as_str(),
             10.0,
             20.0,
             20.0,
@@ -328,9 +328,17 @@ impl Grid {
         );
 
         draw_text(
-            format!("Loop time (micro seconds): {}", self.duration).as_str(),
+            format!("Loop time (micro): {}", self.duration).as_str(),
             10.0,
             40.0,
+            20.0,
+            WHITE,
+        );
+
+        draw_text(
+            format!("FPS: {}", self.fps).as_str(),
+            10.0,
+            60.0,
             20.0,
             WHITE,
         );

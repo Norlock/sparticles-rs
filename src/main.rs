@@ -25,6 +25,7 @@ mod size_animation;
 mod stray_animation;
 mod swarm_emitter;
 mod trail_animation;
+mod trail_handler;
 
 use grid::{Grid, GridOptions};
 
@@ -32,7 +33,7 @@ use fill_style::FillStyle;
 use force::Force;
 use macroquad::prelude::*;
 use particle::ParticleAttributes;
-use pattern::{another_emitter, shimmer_animations, shimmer_forces, smoke};
+use pattern::{another_emitter, shimmer_animations, shimmer_forces, smoke, trail_animation};
 use position::Position;
 
 #[macroquad::main("Particles")]
@@ -69,31 +70,34 @@ async fn main() {
         elasticity: 1.,
         mass: 2.0,
         animation_options: Some(shimmer_animations()),
+        trail_handler: None,
     };
 
     grid.fill(&attributes, 50, FillStyle::WhiteNoise);
 
     let attributes = ParticleAttributes {
-        color: Color::from_rgba(231, 196, 150, 255),
+        //color: Color::from_rgba(231, 196, 150, 255),
+        color: Color::from_rgba(0, 255, 0, 255),
         texture: None,
         friction_coefficient: 0.008,
         diameter: 7.,
         elasticity: 1.,
         mass: 3.,
+        trail_handler: Some(trail_animation()),
         animation_options: None,
     };
 
     grid.fill(&attributes, 100, FillStyle::WhiteNoise);
 
-    //grid.add_emitter(smoke());
-    grid.add_emitter(another_emitter());
+    grid.add_emitter(smoke());
+    //grid.add_emitter(another_emitter());
 
     //let color = Color::from_rgba(0, 26, 51, 255);
     loop {
         clear_background(BLACK);
 
-        grid.draw_ui();
         grid.draw();
+        grid.draw_ui();
 
         next_frame().await
     }

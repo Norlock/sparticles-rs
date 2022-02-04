@@ -1,15 +1,16 @@
 use crate::animation::Animate;
 use crate::animation::AnimationData;
+use crate::animation::AnimationTime;
 use macroquad::prelude::rand;
 
 pub struct StrayAnimation {
-    from_ms: u128,
-    until_ms: u128,
+    from_ms: u32,
+    until_ms: u32,
     strayness_radians: f32,
 }
 
 impl StrayAnimation {
-    pub fn new(from_ms: u128, until_ms: u128, strayness_degrees: f32) -> Self {
+    pub fn new(from_ms: u32, until_ms: u32, strayness_degrees: f32) -> Self {
         Self {
             from_ms,
             until_ms,
@@ -19,8 +20,8 @@ impl StrayAnimation {
 }
 
 impl Animate for StrayAnimation {
-    fn animate(&self, data: &mut AnimationData, animation_cycle_ms: u128) {
-        if animation_cycle_ms < self.from_ms || self.until_ms <= animation_cycle_ms {
+    fn animate(&self, data: &mut AnimationData, time: &AnimationTime) {
+        if time.cycle_ms < self.from_ms || self.until_ms <= time.cycle_ms {
             return;
         }
 

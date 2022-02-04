@@ -2,8 +2,8 @@ use crate::animation::AnimationData;
 use crate::animation_handler::AnimationHandler;
 use crate::animation_handler::AnimationOptions;
 use crate::collision::CollisionData;
-use crate::point::Point;
-use crate::trail_animation::TrailPoint;
+use crate::trail_animation::TrailData;
+use crate::trail_handler::TrailHandler;
 use macroquad::prelude::*;
 use std::rc::Rc;
 use std::time::Instant;
@@ -28,7 +28,7 @@ pub struct Particle {
     pub friction_coefficient: f32,
     pub lifetime: Rc<Instant>,
     pub animation_handler: Option<AnimationHandler>,
-    pub trail: Vec<TrailPoint>,
+    pub trail_handler: Option<TrailHandler>,
 }
 
 pub struct ParticleAttributes {
@@ -42,6 +42,7 @@ pub struct ParticleAttributes {
     pub mass: f32,
     pub diameter: f32,
     pub animation_options: Option<AnimationOptions>,
+    pub trail_handler: Option<TrailHandler>,
 }
 
 impl Particle {
@@ -62,7 +63,7 @@ impl Particle {
             mass: attributes.mass,
             queue_frame: u64::MAX,
             lifetime,
-            trail: Vec::new(),
+            trail_handler: attributes.trail_handler.clone(),
             animation_handler,
         }
     }
@@ -185,16 +186,13 @@ impl Particle {
         true
     }
 
-    pub fn animate(&mut self, grid_position: &Position) {
+    pub fn animate(&mut self) {
         if let Some(animator) = &mut self.animation_handler {
-            let point_abs = Point(self.x + grid_position.x, self.y + grid_position.y);
             let mut data = AnimationData {
                 color: self.color,
                 radius: self.radius,
                 vx: self.vx,
                 vy: self.vy,
-                point_abs,
-                trail_abs: &mut self.trail,
             };
 
             let elapsed_ms = self.lifetime.elapsed().as_millis();
@@ -206,9 +204,21 @@ impl Particle {
         }
     }
 
-    pub fn draw(&self, grid_position: &Position) {
+    pub fn draw(&mut self, grid_position: &Position) {
         let x = self.x + grid_position.x;
         let y = self.y + grid_position.y;
+
+        if let Some(trail_handler) = &mut self.trail_handler {
+            let elapsed_ms = self.lifetime.elapsed().as_millis();
+
+            let mut data = TrailData {
+                radius: self.radius,
+                color: self.color,
+                x_abs: x,
+                y_abs: y,
+            };
+            trail_handler.animate(&mut data, elapsed_ms);
+        }
 
         if let Some(texture) = self.texture {
             let side = self.diameter;

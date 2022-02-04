@@ -2,22 +2,23 @@ use macroquad::prelude::Color;
 
 use crate::animation::Animate;
 use crate::animation::AnimationData;
+use crate::animation::AnimationTime;
 
 #[derive(Clone, Debug)]
 pub struct ColorAnimation {
     pub color1: Color,
     pub color2: Color,
-    pub from_ms: u128,
-    pub until_ms: u128,
+    pub from_ms: u32,
+    pub until_ms: u32,
 }
 
 impl Animate for ColorAnimation {
-    fn animate(&self, data: &mut AnimationData, anim_cycle_ms: u128) {
-        if anim_cycle_ms < self.from_ms || self.until_ms <= anim_cycle_ms {
+    fn animate(&self, data: &mut AnimationData, time: &AnimationTime) {
+        if time.cycle_ms < self.from_ms || self.until_ms <= time.cycle_ms {
             return;
         }
 
-        let delta_current = anim_cycle_ms - self.from_ms;
+        let delta_current = time.cycle_ms - self.from_ms;
         let delta_max = self.until_ms - self.from_ms;
 
         // calculate percent from 0..1

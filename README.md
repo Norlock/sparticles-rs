@@ -12,3 +12,4 @@ TODO pass transform struct instead of trying to modify particles everywhere.
 - [x] Apply gravity on particles.
 - [ ] flight pattern emitter
 - [ ] Boid behaviour
+- [ ] Multiple animation loops.

@@ -1,14 +1,12 @@
-use std::{
-    rc::Rc,
-    time::{Instant, SystemTime},
-};
+use crate::emitter::emitter::Emitter;
+use crate::emitter::emitter::EmitterOptions;
+use crate::force::force::ForceData;
+use crate::force::force_handler::ForceHandler;
+use std::{rc::Rc, time::Instant};
 
 use crate::{
     collision::CollisionData,
-    emitter::{Emitter, EmitterOptions},
     fill_style::FillStyle,
-    force::ForceData,
-    force_handler::ForceHandler,
     particle::{Particle, ParticleAttributes},
     position::Position,
 };
@@ -429,7 +427,8 @@ impl Grid {
 
 #[cfg(test)]
 mod test {
-    use crate::force::Force;
+    use crate::force::force;
+    use crate::grid::test::force::Force;
     use crate::particle::*;
     use crate::FillStyle;
     use crate::ForceBuilder;

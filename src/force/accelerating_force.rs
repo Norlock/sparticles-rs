@@ -1,6 +1,10 @@
-use crate::force::{Force, ForceData};
+use crate::force::force::{Force, ForceData};
 
-pub struct ConstantForce {
+/**
+ * Builds up applying force form 0 to nx/ny over time.
+ * max_(vx/vy) will determin the max (positive or negative) speed a particle in similar direction needs to have the force applied.
+ */
+pub struct AcceleratingForce {
     pub nx: f32,
     pub ny: f32,
     pub max_vx: f32,
@@ -11,14 +15,15 @@ pub struct ConstantForce {
 
 const MS_PER_SEC: f32 = 1000.;
 
-impl Force for ConstantForce {
+impl Force for AcceleratingForce {
     fn apply(&self, data: &mut ForceData, force_cycle_ms: u128) {
         if force_cycle_ms < self.from_ms || self.until_ms <= force_cycle_ms {
             return;
         }
 
-        let vx = self.nx / data.mass;
-        let vy = self.ny / data.mass;
+        let acceleration = ((force_cycle_ms - self.from_ms) as f32 / MS_PER_SEC).powf(2.);
+        let vx = self.nx * acceleration / data.mass;
+        let vy = self.ny * acceleration / data.mass;
 
         let new_vx = data.vx + vx;
         let new_vy = data.vy + vy;

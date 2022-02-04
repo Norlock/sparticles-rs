@@ -1,13 +1,12 @@
-use crate::{
-    animation::AnimationData,
-    animation_handler::{AnimationHandler, AnimationOptions},
-    emitter_animation_handler::EmitterAnimationHandler,
-    force::ForceData,
-    force_handler::ForceHandler,
-    position::Position,
-    trail_animation::{TrailAnimation, TrailData},
-    trail_handler::TrailHandler,
-};
+use crate::animation::animation::AnimationData;
+use crate::animation::animation_handler::AnimationHandler;
+use crate::animation::animation_handler::AnimationOptions;
+use crate::emitter::emitter_animation_handler::EmitterAnimationHandler;
+use crate::force::force::ForceData;
+use crate::force::force_handler::ForceHandler;
+use crate::trail::trail_animation::TrailData;
+use crate::trail::trail_handler::TrailHandler;
+use crate::Position;
 use macroquad::prelude::*;
 use std::rc::Rc;
 use std::time::{Duration, Instant};
@@ -215,14 +214,14 @@ impl Emitter {
             let y = particle.y + self.grid_position.y;
 
             if let Some(trail_handler) = &mut particle.trail_handler {
-                let mut data = TrailData {
+                let data = TrailData {
                     radius: particle.radius,
                     color: particle.color,
                     x_abs: x,
                     y_abs: y,
                 };
 
-                trail_handler.animate(&mut data, particle_elapsed_ms);
+                trail_handler.animate(&data, particle_elapsed_ms);
             }
 
             if let Some(texture) = self.particle_texture {

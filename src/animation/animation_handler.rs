@@ -1,4 +1,4 @@
-use crate::animation::{Animate, AnimationData, AnimationTime};
+use crate::animation::animation::{Animate, AnimationData, AnimationTime};
 use macroquad::prelude::rand;
 use std::fmt::Debug;
 use std::rc::Rc;

@@ -1,4 +1,4 @@
-use crate::force::{Force, ForceData};
+use crate::force::force::{Force, ForceData};
 use crate::point::Point;
 
 pub struct GravitationalForce {

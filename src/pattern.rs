@@ -1,19 +1,21 @@
-use crate::animation::Animate;
-use crate::constant_force::ConstantForce;
-use crate::gravitational_force::GravitationalForce;
+use crate::animation::animation::Animate;
+use crate::animation::animation_handler::AnimationOptions;
+use crate::animation::animation_handler::StartAnimationAt;
+use crate::animation::color_animation::ColorAnimation;
+use crate::animation::size_animation::SizeAnimation;
+use crate::animation::stray_animation::StrayAnimation;
+use crate::emitter::emitter::EmitterOptions;
+use crate::force::accelerating_force::AcceleratingForce;
+use crate::force::constant_force::ConstantForce;
+use crate::force::force_handler::ForceHandler;
+use crate::force::gravitational_force::GravitationalForce;
 use crate::movement_handler::MovementHandler;
 use crate::point::Point;
-use crate::size_animation::SizeAnimation;
-use crate::stray_animation::StrayAnimation;
-use crate::trail_animation::{TrailAnimation, TrailOptions};
-use crate::trail_handler::TrailHandler;
+use crate::trail::trail_animation::TrailAnimation;
+use crate::trail::trail_animation::TrailOptions;
+use crate::trail::trail_handler::TrailHandler;
 use std::time::Duration;
 
-use crate::accelerating_force::AcceleratingForce;
-use crate::animation_handler::{AnimationOptions, StartAnimationAt};
-use crate::color_animation::ColorAnimation;
-use crate::emitter::EmitterOptions;
-use crate::force_handler::ForceHandler;
 use crate::position::Position;
 use macroquad::prelude::*;
 
@@ -164,6 +166,11 @@ pub fn another_emitter() -> EmitterOptions {
         diameter_fraction: 0.7,
     })];
 
+    let trail_handler = Some(TrailHandler {
+        duration_ms: 3_000,
+        trail_animations,
+    });
+
     let mut force_handler = ForceHandler::new(Duration::from_secs(10));
     force_handler.add(Box::new(GravitationalForce {
         from_ms: 0,
@@ -207,11 +214,11 @@ pub fn another_emitter() -> EmitterOptions {
         particle_animation_options: Some(animation_options),
         force_handler: Some(force_handler),
         emitter_animation_handler: None,
-        trail_handler: None,
+        trail_handler,
     }
 }
 
-pub fn shimmer_forces() -> Option<ForceHandler> {
+pub fn random_forces() -> Option<ForceHandler> {
     let mut force_handler = ForceHandler::new(Duration::from_secs(6));
 
     force_handler.add(Box::new(AcceleratingForce {

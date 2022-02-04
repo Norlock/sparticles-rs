@@ -1,39 +1,26 @@
 #![allow(dead_code)]
 
-mod accelerating_force;
 mod animation;
-mod animation_handler;
 mod collision;
-mod color_animation;
-mod constant_force;
 mod container;
 mod emitter;
-mod emitter_animation;
-mod emitter_animation_handler;
 mod fill_style;
 mod force;
-mod force_handler;
-mod forcer;
-mod gravitational_force;
 mod grid;
 mod movement_handler;
 mod particle;
 mod pattern;
 mod point;
 mod position;
-mod size_animation;
-mod stray_animation;
 mod swarm_emitter;
-mod trail_animation;
-mod trail_handler;
+mod trail;
 
 use grid::{Grid, GridOptions};
 
 use fill_style::FillStyle;
-use force::Force;
 use macroquad::prelude::*;
 use particle::ParticleAttributes;
-use pattern::{another_emitter, shimmer_animations, shimmer_forces, smoke, trail_animation};
+use pattern::{another_emitter, random_forces, shimmer_animations, smoke, trail_animation};
 use position::Position;
 
 #[macroquad::main("Particles")]
@@ -47,7 +34,7 @@ async fn main() {
         possibility_y_count: 10,
         possibility_side_length: 10,
         position,
-        force_handler: shimmer_forces(),
+        force_handler: random_forces(),
     });
 
     //let attributes = ParticleAttributes {
@@ -83,14 +70,15 @@ async fn main() {
         diameter: 7.,
         elasticity: 1.,
         mass: 3.,
-        trail_handler: Some(trail_animation()),
+        //trail_handler: Some(trail_animation()),
+        trail_handler: None,
         animation_options: None,
     };
 
     grid.fill(&attributes, 100, FillStyle::WhiteNoise);
 
-    grid.add_emitter(smoke());
-    //grid.add_emitter(another_emitter());
+    //grid.add_emitter(smoke());
+    grid.add_emitter(another_emitter());
 
     //let color = Color::from_rgba(0, 26, 51, 255);
     loop {

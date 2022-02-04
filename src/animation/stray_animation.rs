@@ -1,6 +1,6 @@
-use crate::animation::Animate;
-use crate::animation::AnimationData;
-use crate::animation::AnimationTime;
+use crate::animation::animation::Animate;
+use crate::animation::animation::AnimationData;
+use crate::animation::animation::AnimationTime;
 use macroquad::prelude::rand;
 
 pub struct StrayAnimation {

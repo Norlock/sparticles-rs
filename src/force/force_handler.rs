@@ -1,5 +1,5 @@
-use crate::force::ForceData;
-use crate::Force;
+use crate::force::force::Force;
+use crate::force::force::ForceData;
 use std::time::Duration;
 
 #[derive(Debug)]

@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use std::time::Duration;
 
 pub trait EmitterAnimate {
-    fn animate(&self, data: &mut EmitterData, animation_cycle_ms: u128);
+    fn animate(&self, data: &mut EmitterData, animation_cycle_ms: u32);
 }
 
 impl Debug for dyn EmitterAnimate {

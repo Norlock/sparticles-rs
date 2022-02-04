@@ -1,9 +1,9 @@
-use crate::animation::AnimationData;
-use crate::animation_handler::AnimationHandler;
-use crate::animation_handler::AnimationOptions;
+use crate::animation::animation::AnimationData;
+use crate::animation::animation_handler::AnimationHandler;
+use crate::animation::animation_handler::AnimationOptions;
 use crate::collision::CollisionData;
-use crate::trail_animation::TrailData;
-use crate::trail_handler::TrailHandler;
+use crate::trail::trail_animation::TrailData;
+use crate::trail::trail_handler::TrailHandler;
 use macroquad::prelude::*;
 use std::rc::Rc;
 use std::time::Instant;

@@ -69,7 +69,7 @@ impl TrailAnimation {
         }
     }
 
-    pub fn animate(&mut self, data: &mut TrailData, cycle_ms: u32) {
+    pub fn animate(&mut self, data: &TrailData, cycle_ms: u32) {
         let new_iteration = cycle_ms / self.update_ms;
 
         let is_in_cycle = self.from_ms <= cycle_ms && cycle_ms < self.until_ms;

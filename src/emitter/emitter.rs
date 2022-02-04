@@ -11,6 +11,8 @@ use macroquad::prelude::*;
 use std::rc::Rc;
 use std::time::{Duration, Instant};
 
+use super::emitter_animation::EmitterData;
+
 pub struct EmitterOptions {
     pub emitter_position: Position,
     pub emitter_diameter: f32,
@@ -82,6 +84,8 @@ struct EmittedParticle {
     animation_handler: Option<AnimationHandler>,
 }
 
+const INVERSE_RADIANS: f32 = -90_f32 * (std::f32::consts::PI / 181.0f32); // 0 deg will be emitting above
+
 impl Emitter {
     pub fn new(grid_position: Position, options: EmitterOptions) -> Self {
         let EmitterOptions {
@@ -108,8 +112,7 @@ impl Emitter {
         } = options;
 
         let angle_radians = angle_degrees.to_radians();
-        let inverse_radians = -90_f32.to_radians(); // 0 deg will be emitting above
-        let angle_emission_radians = angle_radians + inverse_radians;
+        let angle_emission_radians = angle_radians + INVERSE_RADIANS;
         let x = emitter_position.x;
         let y = emitter_position.y;
 
@@ -144,6 +147,28 @@ impl Emitter {
         }
     }
 
+    fn animate_emitter(&mut self, elapsed_ms: u128) {
+        if let Some(anim_handler) = &self.emitter_animation_handler {
+            let mut data = EmitterData {
+                delay_between_emission_ms: self.delay_between_emission_ms,
+                particle_speed: self.particle_speed,
+                particle_friction_coefficient: self.particle_friction_coefficient,
+                particles_per_emission: self.particles_per_emission,
+                respect_grid_bounds: self.respect_grid_bounds,
+                emitter_diameter: self.emitter_diameter,
+                emission_distortion: self.emission_distortion,
+                angle_radians: self.angle_radians,
+                diffusion_radians: self.diffusion_radians,
+                x: self.x,
+                y: self.y,
+            };
+
+            anim_handler.animate(&mut data, elapsed_ms);
+
+            self.angle_emission_radians = data.angle_radians + INVERSE_RADIANS;
+        }
+    }
+
     pub fn emit(&mut self) {
         let elapsed = self.lifetime.elapsed();
         let overdue = elapsed > self.emitter_duration;
@@ -158,6 +183,8 @@ impl Emitter {
                     .push(self.create_particle(Rc::clone(&lifetime)));
             }
         }
+
+        self.animate_emitter(emitter_elapsed_ms);
 
         for i in (0..self.particles.len()).rev() {
             let mut particle = self.particles.swap_remove(i);

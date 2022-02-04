@@ -1,8 +1,7 @@
 use std::fmt::Debug;
-use std::time::Duration;
 
 pub trait EmitterAnimate {
-    fn animate(&self, data: &mut EmitterData, animation_cycle_ms: u32);
+    fn animate(&self, data: &mut EmitterData, cycle_ms: u32);
 }
 
 impl Debug for dyn EmitterAnimate {
@@ -21,11 +20,7 @@ pub struct EmitterData {
     pub particles_per_emission: u32,
     pub delay_between_emission_ms: u128,
     pub emission_distortion: f32,
-    pub particle_lifetime: Duration,
-    /// Only on newly spawned particles
-    pub particle_radius: f32,
-    /// Only on newly spawned particles
-    pub particle_mass: f32,
+
     /// Only on newly spawned particles
     pub particle_speed: f32,
     /// Only on newly spawned particles

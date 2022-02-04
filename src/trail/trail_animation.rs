@@ -24,6 +24,7 @@ struct TrailPoint {
     color: Color,
     diameter: f32,
     line_end: bool,
+    pub iteration: u32,
 }
 
 pub struct TrailOptions {
@@ -103,6 +104,7 @@ impl TrailAnimation {
                 y: new_y,
                 line_end: false,
                 diameter,
+                iteration: new_iteration,
             };
 
             if self.trail.is_empty() || is_new_iteration {

@@ -5,6 +5,9 @@ use crate::animation::color_animation::ColorAnimation;
 use crate::animation::size_animation::SizeAnimation;
 use crate::animation::stray_animation::StrayAnimation;
 use crate::emitter::emitter::EmitterOptions;
+use crate::emitter::emitter_animation::EmitterAnimate;
+use crate::emitter::emitter_animation_handler::EmitterAnimationHandler;
+use crate::emitter::sway_animation::SwayAnimation;
 use crate::force::accelerating_force::AcceleratingForce;
 use crate::force::constant_force::ConstantForce;
 use crate::force::force_handler::ForceHandler;
@@ -137,6 +140,26 @@ pub fn smoke() -> EmitterOptions {
     }
 }
 
+fn sway_animation() -> Option<EmitterAnimationHandler> {
+    let sway_1 = Box::new(SwayAnimation {
+        from_ms: 0,
+        until_ms: 1000,
+        start_angle_degrees: 135.,
+        end_angle_degrees: 360.,
+    });
+
+    let sway_2 = Box::new(SwayAnimation {
+        from_ms: 1000,
+        until_ms: 2000,
+        start_angle_degrees: 0.,
+        end_angle_degrees: 135.,
+    });
+
+    let animations: Vec<Box<dyn EmitterAnimate>> = vec![sway_1, sway_2];
+
+    Some(EmitterAnimationHandler::new(2000, animations))
+}
+
 pub fn another_emitter() -> EmitterOptions {
     let mut animations: Vec<Box<dyn Animate>> = Vec::new();
 
@@ -158,18 +181,18 @@ pub fn another_emitter() -> EmitterOptions {
 
     let animation_options = AnimationOptions::new(3_000, StartAnimationAt::Zero, animations);
 
-    let trail_animations = vec![TrailAnimation::new(TrailOptions {
-        from_ms: 0,
-        until_ms: 3_000,
-        update_ms: 32,
-        opacity_loss_per_update: 0.1,
-        diameter_fraction: 0.7,
-    })];
+    //let trail_animations = vec![TrailAnimation::new(TrailOptions {
+    //from_ms: 0,
+    //until_ms: 3_000,
+    //update_ms: 16,
+    //opacity_loss_per_update: 0.1,
+    //diameter_fraction: 0.7,
+    //})];
 
-    let trail_handler = Some(TrailHandler {
-        duration_ms: 3_000,
-        trail_animations,
-    });
+    //let trail_handler = Some(TrailHandler {
+    //duration_ms: 3_000,
+    //trail_animations,
+    //});
 
     let mut force_handler = ForceHandler::new(Duration::from_secs(10));
     force_handler.add(Box::new(GravitationalForce {
@@ -192,8 +215,6 @@ pub fn another_emitter() -> EmitterOptions {
         end: Point(400., 400.),
     }));
 
-    let movement_handler = MovementHandler::new(1.);
-
     EmitterOptions {
         emitter_position: Position::new(300., 200.),
         emitter_diameter: 100.,
@@ -213,8 +234,8 @@ pub fn another_emitter() -> EmitterOptions {
         respect_grid_bounds: true,
         particle_animation_options: Some(animation_options),
         force_handler: Some(force_handler),
-        emitter_animation_handler: None,
-        trail_handler,
+        emitter_animation_handler: sway_animation(),
+        trail_handler: None,
     }
 }
 

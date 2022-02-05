@@ -1,3 +1,4 @@
+use macroquad::prelude::Color;
 use std::fmt::Debug;
 
 pub trait EmitterAnimate {
@@ -20,6 +21,7 @@ pub struct EmitterData {
     pub particles_per_emission: u32,
     pub delay_between_emission_ms: u128,
     pub emission_distortion: f32,
+    pub particle_color: Color,
 
     /// Only on newly spawned particles
     pub particle_speed: f32,

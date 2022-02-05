@@ -48,34 +48,34 @@ async fn main() {
 
     //grid.fill(&attributes, 500, FillStyle::WhiteNoise);
 
-    let texture = load_texture("assets/bubble.png").await.unwrap();
-    let attributes = ParticleAttributes {
-        color: Color::from_rgba(255, 255, 255, 255),
-        texture: Some(texture),
-        friction_coefficient: 0.001,
-        diameter: 6.,
-        elasticity: 1.,
-        mass: 2.0,
-        animation_options: Some(shimmer_animations()),
-        trail_handler: None,
-    };
+    //let texture = load_texture("assets/bubble.png").await.unwrap();
+    //let attributes = ParticleAttributes {
+    //color: Color::from_rgba(255, 255, 255, 255),
+    //texture: Some(texture),
+    //friction_coefficient: 0.001,
+    //diameter: 6.,
+    //elasticity: 1.,
+    //mass: 2.0,
+    //animation_options: Some(shimmer_animations()),
+    //trail_handler: None,
+    //};
 
-    grid.fill(&attributes, 50, FillStyle::WhiteNoise);
+    //grid.fill(&attributes, 50, FillStyle::WhiteNoise);
 
-    let attributes = ParticleAttributes {
-        //color: Color::from_rgba(231, 196, 150, 255),
-        color: Color::from_rgba(0, 255, 0, 255),
-        texture: None,
-        friction_coefficient: 0.008,
-        diameter: 7.,
-        elasticity: 1.,
-        mass: 3.,
-        //trail_handler: Some(trail_animation()),
-        trail_handler: None,
-        animation_options: None,
-    };
+    //let attributes = ParticleAttributes {
+    ////color: Color::from_rgba(231, 196, 150, 255),
+    //color: Color::from_rgba(0, 255, 0, 255),
+    //texture: None,
+    //friction_coefficient: 0.008,
+    //diameter: 7.,
+    //elasticity: 1.,
+    //mass: 3.,
+    ////trail_handler: Some(trail_animation()),
+    //trail_handler: None,
+    //animation_options: None,
+    //};
 
-    grid.fill(&attributes, 100, FillStyle::WhiteNoise);
+    //grid.fill(&attributes, 100, FillStyle::WhiteNoise);
 
     //grid.add_emitter(smoke());
     grid.add_emitter(another_emitter());

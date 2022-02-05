@@ -5,6 +5,8 @@ use crate::animation::color_animation::ColorAnimation;
 use crate::animation::size_animation::SizeAnimation;
 use crate::animation::stray_animation::StrayAnimation;
 use crate::emitter::diffusion_animation::DiffusionAnimation;
+use crate::emitter::emit_color_animation::EmitColorAnimation;
+use crate::emitter::emit_speed_animation::EmitSpeedAnimation;
 use crate::emitter::emitter::EmitterOptions;
 use crate::emitter::emitter_animation::EmitterAnimate;
 use crate::emitter::emitter_animation_handler::EmitterAnimationHandler;
@@ -187,17 +189,38 @@ fn sway_and_diffusion_animation() -> Option<EmitterAnimationHandler> {
     let movement_1 = Box::new(LooseMovementAnimation {
         from_ms: 0,
         until_ms: 3000,
-        vx: 0.4,
-        vy: 1.0,
+        vx: 0.5,
+        vy: 0.8,
         stray_radians: 2_f32.to_radians(),
     });
 
     let movement_2 = Box::new(LooseMovementAnimation {
         from_ms: 3000,
         until_ms: 4000,
-        vx: -1.7,
-        vy: -0.5,
+        vx: -1.2,
+        vy: -0.6,
         stray_radians: 2_f32.to_radians(),
+    });
+
+    let color_1 = Box::new(EmitColorAnimation {
+        from_ms: 1000,
+        until_ms: 3000,
+        from_color: Color::from_rgba(0, 100, 155, 255),
+        to_color: Color::from_rgba(0, 155, 100, 255),
+    });
+
+    let speed_1 = Box::new(EmitSpeedAnimation {
+        from_ms: 1000,
+        until_ms: 2000,
+        from_speed: 2.5,
+        to_speed: 1.5,
+    });
+
+    let speed_2 = Box::new(EmitSpeedAnimation {
+        from_ms: 3000,
+        until_ms: 4000,
+        from_speed: 1.5,
+        to_speed: 4.0,
     });
 
     let animations: Vec<Box<dyn EmitterAnimate>> = vec![
@@ -209,6 +232,9 @@ fn sway_and_diffusion_animation() -> Option<EmitterAnimationHandler> {
         diffusion_2,
         movement_1,
         movement_2,
+        color_1,
+        speed_1,
+        speed_2,
     ];
 
     Some(EmitterAnimationHandler::new(4000, animations))
@@ -220,14 +246,14 @@ pub fn another_emitter() -> EmitterOptions {
     animations.push(Box::new(ColorAnimation {
         color1: Color::from_rgba(0, 10, 20, 255),
         color2: Color::from_rgba(0, 61, 152, 255),
-        from_ms: 0,
-        until_ms: 500,
+        from_ms: 1000,
+        until_ms: 2000,
     }));
 
     animations.push(Box::new(ColorAnimation {
         color1: Color::from_rgba(0, 61, 162, 255),
         color2: Color::from_rgba(102, 0, 102, 255),
-        from_ms: 500,
+        from_ms: 1000,
         until_ms: 3_000,
     }));
 
@@ -235,18 +261,18 @@ pub fn another_emitter() -> EmitterOptions {
 
     let animation_options = AnimationOptions::new(3_000, StartAnimationAt::Zero, animations);
 
-    //let trail_animations = vec![TrailAnimation::new(TrailOptions {
-    //from_ms: 0,
-    //until_ms: 3_000,
-    //update_ms: 16,
-    //opacity_loss_per_update: 0.1,
-    //diameter_fraction: 0.7,
-    //})];
+    let trail_animations = vec![TrailAnimation::new(TrailOptions {
+        from_ms: 0,
+        until_ms: 3_000,
+        update_ms: 16,
+        opacity_loss_per_update: 0.1,
+        diameter_fraction: 0.7,
+    })];
 
-    //let trail_handler = Some(TrailHandler {
-    //duration_ms: 3_000,
-    //trail_animations,
-    //});
+    let trail_handler = Some(TrailHandler {
+        duration_ms: 3_000,
+        trail_animations,
+    });
 
     let mut force_handler = ForceHandler::new(Duration::from_secs(10));
     force_handler.add(Box::new(GravitationalForce {
@@ -285,11 +311,11 @@ pub fn another_emitter() -> EmitterOptions {
         particle_mass: 1.,
         particle_friction_coefficient: 0.007,
         particle_speed: 2.5,
-        respect_grid_bounds: true,
+        respect_grid_bounds: false,
         particle_animation_options: Some(animation_options),
         force_handler: Some(force_handler),
         emitter_animation_handler: sway_and_diffusion_animation(),
-        trail_handler: None,
+        trail_handler,
     }
 }
 

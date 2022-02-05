@@ -1,4 +1,6 @@
 pub mod diffusion_animation;
+pub mod emit_color_animation;
+pub mod emit_speed_animation;
 pub mod emitter;
 pub mod emitter_animation;
 pub mod emitter_animation_handler;

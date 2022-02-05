@@ -156,6 +156,7 @@ impl Emitter {
                 particles_per_emission: self.particles_per_emission,
                 respect_grid_bounds: self.respect_grid_bounds,
                 emitter_diameter: self.emitter_diameter,
+                particle_color: self.particle_color,
                 emission_distortion: self.emission_distortion,
                 angle_radians: self.angle_radians,
                 diffusion_radians: self.diffusion_radians,
@@ -169,6 +170,8 @@ impl Emitter {
             self.diffusion_radians = data.diffusion_radians;
             self.x = data.x;
             self.y = data.y;
+            self.particle_color = data.particle_color;
+            self.particle_speed = data.particle_speed;
         }
     }
 

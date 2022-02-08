@@ -1,9 +1,9 @@
 #![allow(dead_code)]
 
-mod animation;
+mod animations;
 mod collision;
 mod container;
-mod emitter;
+mod emitters;
 mod fill_style;
 mod force;
 mod grid;
@@ -13,7 +13,7 @@ mod pattern;
 mod point;
 mod position;
 mod swarm_emitter;
-mod trail;
+mod trails;
 
 use grid::{Grid, GridOptions};
 

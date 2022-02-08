@@ -1,25 +1,27 @@
-use crate::animation::animation::Animate;
-use crate::animation::animation_handler::AnimationOptions;
-use crate::animation::animation_handler::StartAnimationAt;
-use crate::animation::color_animation::ColorAnimation;
-use crate::animation::size_animation::SizeAnimation;
-use crate::animation::stray_animation::StrayAnimation;
-use crate::emitter::diffusion_animation::DiffusionAnimation;
-use crate::emitter::emit_color_animation::EmitColorAnimation;
-use crate::emitter::emit_speed_animation::EmitSpeedAnimation;
-use crate::emitter::emitter::EmitterOptions;
-use crate::emitter::emitter_animation::EmitterAnimate;
-use crate::emitter::emitter_animation_handler::EmitterAnimationHandler;
-use crate::emitter::loose_movement_animation::LooseMovementAnimation;
-use crate::emitter::sway_animation::SwayAnimation;
+use crate::animations::animation::Animate;
+use crate::animations::animation_handler::AnimationOptions;
+use crate::animations::animation_handler::StartAnimationAt;
+use crate::animations::color_animation::DuoColorAnimation;
+use crate::animations::color_animation::MonoColorAnimation;
+use crate::animations::size_animation::SizeAnimation;
+use crate::animations::stray_animation::StrayAnimation;
+use crate::emitters::diffusion_animation::DiffusionAnimation;
+use crate::emitters::emit_color_animation::EmitColorAnimation;
+use crate::emitters::emit_speed_animation::EmitSpeedAnimation;
+use crate::emitters::emitter::EmitterOptions;
+use crate::emitters::emitter_animation::EmitterAnimate;
+use crate::emitters::emitter_animation_handler::EmitterAnimationHandler;
+use crate::emitters::loose_movement_animation::LooseMovementAnimation;
+use crate::emitters::randomize_size_animation::RandomizeSizeAnimation;
+use crate::emitters::sway_animation::SwayAnimation;
 use crate::force::accelerating_force::AcceleratingForce;
 use crate::force::constant_force::ConstantForce;
 use crate::force::force_handler::ForceHandler;
 use crate::force::gravitational_force::GravitationalForce;
 use crate::point::Point;
-use crate::trail::trail_animation::TrailAnimation;
-use crate::trail::trail_animation::TrailOptions;
-use crate::trail::trail_handler::TrailHandler;
+use crate::trails::trail_animation::TrailAnimation;
+use crate::trails::trail_animation::TrailOptions;
+use crate::trails::trail_handler::TrailHandler;
 use std::time::Duration;
 
 use crate::position::Position;
@@ -28,16 +30,16 @@ use macroquad::prelude::*;
 pub fn shimmer_animations() -> AnimationOptions {
     let mut animations: Vec<Box<dyn Animate>> = Vec::new();
 
-    animations.push(Box::new(ColorAnimation {
-        color1: Color::from_rgba(255, 255, 255, 255),
-        color2: Color::from_rgba(255, 255, 255, 0),
+    animations.push(Box::new(DuoColorAnimation {
+        color_from: Color::from_rgba(255, 255, 255, 255),
+        color_to: Color::from_rgba(255, 255, 255, 0),
         from_ms: 1000,
         until_ms: 2000,
     }));
 
-    animations.push(Box::new(ColorAnimation {
-        color1: Color::from_rgba(255, 255, 255, 0),
-        color2: Color::from_rgba(255, 255, 255, 255),
+    animations.push(Box::new(DuoColorAnimation {
+        color_from: Color::from_rgba(255, 255, 255, 0),
+        color_to: Color::from_rgba(255, 255, 255, 255),
         from_ms: 3000,
         until_ms: 4000,
     }));
@@ -63,10 +65,16 @@ pub fn trail_animation() -> TrailHandler {
 pub fn smoke() -> EmitterOptions {
     let mut animations: Vec<Box<dyn Animate>> = Vec::new();
 
-    animations.push(Box::new(ColorAnimation {
-        color1: Color::from_rgba(200, 100, 1, 255),
-        color2: Color::from_rgba(145, 42, 245, 255),
+    animations.push(Box::new(MonoColorAnimation {
+        color: Color::from_rgba(145, 42, 245, 255),
         from_ms: 0,
+        until_ms: 1000,
+    }));
+
+    animations.push(Box::new(DuoColorAnimation {
+        color_to: Color::from_rgba(145, 42, 245, 255),
+        color_from: Color::from_rgba(200, 100, 1, 255),
+        from_ms: 1000,
         until_ms: 2000,
     }));
 
@@ -82,19 +90,12 @@ pub fn smoke() -> EmitterOptions {
         opacity_loss_per_update: 1. / 6.,
         diameter_fraction: 0.7,
         from_ms: 0_000,
-        until_ms: 1_000,
-    });
-    let trail_anim_2 = TrailAnimation::new(TrailOptions {
-        update_ms: 32,
-        opacity_loss_per_update: 1. / 5.,
-        diameter_fraction: 0.9,
-        from_ms: 1_700,
-        until_ms: 3_330,
+        until_ms: 3_000,
     });
 
     let trail_handler = TrailHandler {
         duration_ms: 4000,
-        trail_animations: vec![trail_anim_1, trail_anim_2],
+        trail_animations: vec![trail_anim_1],
     };
 
     let animation_options = AnimationOptions::new(4000, StartAnimationAt::Zero, animations);
@@ -140,6 +141,7 @@ pub fn smoke() -> EmitterOptions {
         force_handler: Some(force_handler),
         emitter_animation_handler: None,
         trail_handler: Some(trail_handler),
+        //trail_handler: None,
     }
 }
 
@@ -189,7 +191,7 @@ fn sway_and_diffusion_animation() -> Option<EmitterAnimationHandler> {
     let movement_1 = Box::new(LooseMovementAnimation {
         from_ms: 0,
         until_ms: 3000,
-        vx: 0.5,
+        vx: 1.1,
         vy: 0.8,
         stray_radians: 2_f32.to_radians(),
     });
@@ -206,7 +208,7 @@ fn sway_and_diffusion_animation() -> Option<EmitterAnimationHandler> {
         from_ms: 1000,
         until_ms: 3000,
         from_color: Color::from_rgba(0, 100, 155, 255),
-        to_color: Color::from_rgba(0, 155, 100, 255),
+        to_color: Color::from_rgba(0, 135, 100, 255),
     });
 
     let speed_1 = Box::new(EmitSpeedAnimation {
@@ -223,6 +225,11 @@ fn sway_and_diffusion_animation() -> Option<EmitterAnimationHandler> {
         to_speed: 4.0,
     });
 
+    let randomize_size_1 = Box::new(RandomizeSizeAnimation {
+        min_radius: 1.,
+        max_radius: 3.5,
+    });
+
     let animations: Vec<Box<dyn EmitterAnimate>> = vec![
         sway_1,
         sway_2,
@@ -235,6 +242,7 @@ fn sway_and_diffusion_animation() -> Option<EmitterAnimationHandler> {
         color_1,
         speed_1,
         speed_2,
+        randomize_size_1,
     ];
 
     Some(EmitterAnimationHandler::new(4000, animations))
@@ -243,16 +251,16 @@ fn sway_and_diffusion_animation() -> Option<EmitterAnimationHandler> {
 pub fn another_emitter() -> EmitterOptions {
     let mut animations: Vec<Box<dyn Animate>> = Vec::new();
 
-    animations.push(Box::new(ColorAnimation {
-        color1: Color::from_rgba(0, 10, 20, 255),
-        color2: Color::from_rgba(0, 61, 152, 255),
+    animations.push(Box::new(DuoColorAnimation {
+        color_from: Color::from_rgba(0, 10, 20, 255),
+        color_to: Color::from_rgba(0, 61, 152, 255),
         from_ms: 1000,
         until_ms: 2000,
     }));
 
-    animations.push(Box::new(ColorAnimation {
-        color1: Color::from_rgba(0, 61, 162, 255),
-        color2: Color::from_rgba(102, 0, 102, 255),
+    animations.push(Box::new(DuoColorAnimation {
+        color_from: Color::from_rgba(0, 61, 162, 255),
+        color_to: Color::from_rgba(102, 0, 102, 255),
         from_ms: 1000,
         until_ms: 3_000,
     }));
@@ -265,7 +273,7 @@ pub fn another_emitter() -> EmitterOptions {
         from_ms: 0,
         until_ms: 3_000,
         update_ms: 16,
-        opacity_loss_per_update: 0.1,
+        opacity_loss_per_update: 0.15,
         diameter_fraction: 0.7,
     })];
 
@@ -301,12 +309,12 @@ pub fn another_emitter() -> EmitterOptions {
         emitter_duration: Duration::from_secs(10),
         angle_degrees: 135.,
         emission_distortion_px: 3.,
-        delay_between_emission: Duration::from_millis(100),
+        delay_between_emission: Duration::from_millis(10),
         diffusion_degrees: 70.,
         particle_color: Color::from_rgba(10, 0, 250, 255),
         particle_texture: None,
-        particles_per_emission: 30,
-        particle_lifetime: Duration::from_secs(3),
+        particles_per_emission: 8,
+        particle_lifetime: Duration::from_secs(4),
         particle_radius: 3.,
         particle_mass: 1.,
         particle_friction_coefficient: 0.007,

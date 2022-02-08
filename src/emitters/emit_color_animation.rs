@@ -1,4 +1,4 @@
-use crate::emitter::emitter_animation::EmitterData;
+use super::emitter_animation::EmitterData;
 use macroquad::prelude::Color;
 
 use super::emitter_animation::EmitterAnimate;

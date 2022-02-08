@@ -1,5 +1,5 @@
 use super::emitter_animation::EmitterAnimate;
-use crate::emitter::emitter_animation::EmitterData;
+use crate::emitters::emitter_animation::EmitterData;
 use macroquad::prelude::rand;
 
 pub struct LooseMovementAnimation {

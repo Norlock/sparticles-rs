@@ -1,9 +1,9 @@
-use crate::animation::animation::AnimationData;
-use crate::animation::animation_handler::AnimationHandler;
-use crate::animation::animation_handler::AnimationOptions;
+use crate::animations::animation::AnimationData;
+use crate::animations::animation_handler::AnimationHandler;
+use crate::animations::animation_handler::AnimationOptions;
 use crate::collision::CollisionData;
-use crate::trail::trail_animation::TrailData;
-use crate::trail::trail_handler::TrailHandler;
+use crate::trails::trail_animation::TrailData;
+use crate::trails::trail_handler::TrailHandler;
 use macroquad::prelude::*;
 use std::rc::Rc;
 use std::time::Instant;
@@ -211,13 +211,14 @@ impl Particle {
         if let Some(trail_handler) = &mut self.trail_handler {
             let elapsed_ms = self.lifetime.elapsed().as_millis();
 
-            let mut data = TrailData {
+            let data = TrailData {
                 radius: self.radius,
                 color: self.color,
                 x_abs: x,
                 y_abs: y,
             };
-            trail_handler.animate(&mut data, elapsed_ms);
+
+            trail_handler.animate(&data, elapsed_ms);
         }
 
         if let Some(texture) = self.texture {

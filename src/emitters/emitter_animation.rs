@@ -22,6 +22,7 @@ pub struct EmitterData {
     pub delay_between_emission_ms: u128,
     pub emission_distortion: f32,
     pub particle_color: Color,
+    pub particle_radius: f32,
 
     /// Only on newly spawned particles
     pub particle_speed: f32,

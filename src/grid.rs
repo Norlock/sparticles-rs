@@ -1,5 +1,5 @@
-use crate::emitter::emitter::Emitter;
-use crate::emitter::emitter::EmitterOptions;
+use crate::emitters::emitter::Emitter;
+use crate::emitters::emitter::EmitterOptions;
 use crate::force::force::ForceData;
 use crate::force::force_handler::ForceHandler;
 use std::{rc::Rc, time::Instant};
@@ -27,6 +27,7 @@ pub struct Grid {
     pub duration: u128,
     pub fps: i32,
     pub particle_count: u32,
+    pub emitted_particle_count: u32,
     pub force_handler: Option<ForceHandler>,
     pub emitters: Vec<Emitter>,
     pub lifetime: Instant,
@@ -89,6 +90,7 @@ impl Grid {
             duration: 0,
             fps: 0,
             particle_count: 0,
+            emitted_particle_count: 0,
             force_handler,
             emitters: Vec::new(),
             lifetime: Instant::now(),
@@ -281,8 +283,8 @@ impl Grid {
     }
 
     pub fn draw(&mut self) {
-        let update_perfs = self.frame % 50 == 0;
-        if update_perfs {
+        let update_gui = self.frame % 50 == 0;
+        if update_gui {
             self.duration = self.lifetime.elapsed().as_micros();
         }
 
@@ -309,16 +311,25 @@ impl Grid {
 
         self.frame += 1;
 
-        if update_perfs {
+        if update_gui {
             let end = self.lifetime.elapsed().as_micros();
             self.duration = end - self.duration;
             self.fps = get_fps();
+
+            self.emitted_particle_count = self
+                .emitters
+                .iter()
+                .fold(0, |acc, emitter| acc + emitter.particle_count);
         }
     }
 
     pub fn draw_ui(&mut self) {
         draw_text(
-            format!("Particle count: {}", self.particle_count).as_str(),
+            format!(
+                "Particle count: {}",
+                self.particle_count + self.emitted_particle_count
+            )
+            .as_str(),
             10.0,
             20.0,
             20.0,

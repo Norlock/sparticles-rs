@@ -1,6 +1,6 @@
-use crate::animation::animation::Animate;
-use crate::animation::animation::AnimationData;
-use crate::animation::animation::AnimationTime;
+use super::animation::Animate;
+use super::animation::AnimationData;
+use super::animation::AnimationTime;
 
 #[derive(Clone, Debug)]
 pub struct SizeAnimation {

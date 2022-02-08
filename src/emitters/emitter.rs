@@ -1,11 +1,11 @@
-use crate::animation::animation::AnimationData;
-use crate::animation::animation_handler::AnimationHandler;
-use crate::animation::animation_handler::AnimationOptions;
-use crate::emitter::emitter_animation_handler::EmitterAnimationHandler;
+use crate::animations::animation::AnimationData;
+use crate::animations::animation_handler::AnimationHandler;
+use crate::animations::animation_handler::AnimationOptions;
+use crate::emitters::emitter_animation_handler::EmitterAnimationHandler;
 use crate::force::force::ForceData;
 use crate::force::force_handler::ForceHandler;
-use crate::trail::trail_animation::TrailData;
-use crate::trail::trail_handler::TrailHandler;
+use crate::trails::trail_animation::TrailData;
+use crate::trails::trail_handler::TrailHandler;
 use crate::Position;
 use macroquad::prelude::*;
 use std::rc::Rc;
@@ -69,6 +69,7 @@ pub struct Emitter {
     force_handler: Option<ForceHandler>,
     emitter_animation_handler: Option<EmitterAnimationHandler>,
     pub delete: bool,
+    pub particle_count: u32,
 }
 
 #[derive(Debug)]
@@ -131,6 +132,7 @@ impl Emitter {
             angle_emission_radians,
             emission_distortion: emission_distortion_px,
             particle_lifetime_ms: particle_lifetime.as_millis(),
+            particle_count: 0,
             emitter_diameter,
             emitter_duration,
             lifetime: Instant::now(),
@@ -160,6 +162,7 @@ impl Emitter {
                 emission_distortion: self.emission_distortion,
                 angle_radians: self.angle_radians,
                 diffusion_radians: self.diffusion_radians,
+                particle_radius: self.particle_radius,
                 x: self.x,
                 y: self.y,
             };
@@ -172,6 +175,7 @@ impl Emitter {
             self.y = data.y;
             self.particle_color = data.particle_color;
             self.particle_speed = data.particle_speed;
+            self.particle_radius = data.particle_radius;
         }
     }
 
@@ -191,7 +195,15 @@ impl Emitter {
         }
 
         self.animate_emitter(emitter_elapsed_ms);
+        self.update_particles(emitter_elapsed_ms);
 
+        if self.particles.is_empty() && overdue {
+            self.delete = true;
+        }
+        self.particle_count = self.particles.len() as u32;
+    }
+
+    fn update_particles(&mut self, emitter_elapsed_ms: u128) {
         for i in (0..self.particles.len()).rev() {
             let mut particle = self.particles.swap_remove(i);
 
@@ -283,10 +295,6 @@ impl Emitter {
             } else if particle_elapsed_ms <= self.particle_lifetime_ms {
                 self.particles.push(particle);
             }
-        }
-
-        if self.particles.is_empty() && overdue {
-            self.delete = true;
         }
     }
 

@@ -1,4 +1,4 @@
-use crate::emitter::emitter_animation::{EmitterAnimate, EmitterData};
+use crate::emitters::emitter_animation::{EmitterAnimate, EmitterData};
 
 #[derive(Debug)]
 pub struct EmitterAnimationHandler {

@@ -95,13 +95,13 @@ impl TrailAnimation {
 
         if is_in_cycle {
             let diameter = data.radius * 2. * self.diameter_fraction;
-            let new_x = data.x_abs;
-            let new_y = data.y_abs;
+            let x = data.x_abs;
+            let y = data.y_abs;
 
             let create_new_point = || TrailPoint {
                 color: data.color,
-                x: new_x,
-                y: new_y,
+                x,
+                y,
                 line_end: false,
                 diameter,
                 iteration: new_iteration,
@@ -110,18 +110,15 @@ impl TrailAnimation {
             if self.trail.is_empty() || is_new_iteration {
                 self.trail.push_back(create_new_point());
             } else {
-                let last_index = self.trail.len() - 1;
-                let lp = &mut self.trail[last_index];
-                lp.x = new_x;
-                lp.y = new_y;
-                lp.color = data.color;
-                lp.diameter = diameter;
+                if let Some(last) = self.trail.iter_mut().last() {
+                    last.x = x;
+                    last.y = y;
+                    last.color = data.color;
+                    last.diameter = diameter;
+                }
             }
-        } else {
-            self.trail
-                .iter_mut()
-                .last()
-                .map(|last_point| last_point.line_end = true);
+        } else if let Some(last) = self.trail.iter_mut().last() {
+            last.line_end = true;
         }
     }
 }

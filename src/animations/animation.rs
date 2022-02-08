@@ -1,6 +1,8 @@
 use macroquad::prelude::Color;
 use std::fmt::Debug;
 
+pub const FRAME_TIME: u32 = 16;
+
 pub struct AnimationTime {
     pub cycle_ms: u32,
     pub total_ms: u128,

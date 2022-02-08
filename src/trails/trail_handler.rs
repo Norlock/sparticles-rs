@@ -1,5 +1,5 @@
-use crate::trail::trail_animation::TrailAnimation;
-use crate::trail::trail_animation::TrailData;
+use super::trail_animation::TrailAnimation;
+use super::trail_animation::TrailData;
 
 #[derive(Debug, Clone)]
 pub struct TrailHandler {

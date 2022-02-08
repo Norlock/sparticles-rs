@@ -1,5 +1,5 @@
 use super::emitter_animation::EmitterAnimate;
-use crate::emitter::emitter_animation::EmitterData;
+use super::emitter_animation::EmitterData;
 
 pub struct EmitSpeedAnimation {
     pub from_ms: u32,
